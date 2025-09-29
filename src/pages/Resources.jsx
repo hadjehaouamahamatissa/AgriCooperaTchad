@@ -1,472 +1,498 @@
-import React, { useState } from 'react'
-import { Download, Eye, Share2, BookOpen, FileText, Video, Users, Search, Filter } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { 
+  Download, Search, Filter, BookOpen, Video, 
+  FileText, Users, DollarSign, Droplets, 
+  Wheat, Star, Eye, Calendar, User
+} from 'lucide-react'
 
-const ResourceCard = ({ resource, onView, onDownload, onShare }) => {
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'guide': return <BookOpen className="h-5 w-5" />
-      case 'document': return <FileText className="h-5 w-5" />
-      case 'video': return <Video className="h-5 w-5" />
-      default: return <FileText className="h-5 w-5" />
-    }
-  }
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'guide': return 'bg-blue-100 text-blue-800'
-      case 'document': return 'bg-green-100 text-green-800'
-      case 'video': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-lg ${getTypeColor(resource.type)}`}>
-            {getTypeIcon(resource.type)}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{resource.title}</h3>
-            <p className="text-sm text-gray-600">{resource.category}</p>
-          </div>
-        </div>
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(resource.type)}`}>
-          {resource.type}
-        </span>
-      </div>
-
-      <p className="text-gray-700 mb-4 line-clamp-3">{resource.description}</p>
-
-      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-        <span>Par {resource.author}</span>
-        <span>{resource.publishDate}</span>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Users className="h-4 w-4" />
-          <span>{resource.downloads} téléchargements</span>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => onView(resource)}
-            className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-          >
-            <Eye className="h-4 w-4" />
-            <span>Lire</span>
-          </button>
-          <button
-            onClick={() => onDownload(resource)}
-            className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            <span>Télécharger</span>
-          </button>
-          <button
-            onClick={() => onShare(resource)}
-            className="flex items-center space-x-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors"
-          >
-            <Share2 className="h-4 w-4" />
-            <span>Partager</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const ResourceViewer = ({ resource, isOpen, onClose }) => {
-  if (!isOpen || !resource) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold">{resource.title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
-          >
-            ×
-          </button>
-        </div>
-        
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          <div className="prose max-w-none">
-            <div className="mb-6">
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
-                <span>Auteur: {resource.author}</span>
-                <span>•</span>
-                <span>Publié le: {resource.publishDate}</span>
-                <span>•</span>
-                <span>Catégorie: {resource.category}</span>
-              </div>
-              <p className="text-gray-700 mb-6">{resource.description}</p>
-            </div>
-
-            <div className="space-y-6">
-              <section>
-                <h3 className="text-lg font-semibold mb-3">Introduction</h3>
-                <p>
-                  Ce guide technique vous accompagne dans la compréhension et la mise en œuvre 
-                  des meilleures pratiques agricoles adaptées au contexte tchadien. Il couvre 
-                  les aspects essentiels de la production, de la gestion et de la commercialisation.
-                </p>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-3">Objectifs</h3>
-                <ul className="list-disc list-inside space-y-2">
-                  <li>Améliorer les rendements agricoles</li>
-                  <li>Optimiser l'utilisation des ressources</li>
-                  <li>Renforcer les capacités techniques</li>
-                  <li>Faciliter l'accès aux marchés</li>
-                </ul>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-3">Contenu Technique</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">1. Préparation du sol</h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    La préparation adéquate du sol est cruciale pour assurer une bonne germination 
-                    et un développement optimal des cultures. Cette section détaille les techniques 
-                    de labour, de nivellement et d'amendement du sol.
-                  </p>
-                  
-                  <h4 className="font-medium mb-2">2. Sélection des semences</h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Le choix des variétés adaptées au climat local et résistantes aux maladies 
-                    est essentiel. Nous présentons ici les critères de sélection et les sources 
-                    d'approvisionnement fiables.
-                  </p>
-
-                  <h4 className="font-medium mb-2">3. Techniques de plantation</h4>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Les méthodes de plantation varient selon les cultures. Cette partie explique 
-                    les espacements recommandés, les profondeurs de semis et les calendriers culturaux.
-                  </p>
-
-                  <h4 className="font-medium mb-2">4. Gestion de l'irrigation</h4>
-                  <p className="text-sm text-gray-700">
-                    L'eau étant une ressource précieuse, nous détaillons les systèmes d'irrigation 
-                    économiques et efficaces adaptés aux petites exploitations.
-                  </p>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-3">Recommandations Pratiques</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">Bonnes Pratiques</h4>
-                    <ul className="text-sm text-blue-800 space-y-1">
-                      <li>• Rotation des cultures</li>
-                      <li>• Compostage organique</li>
-                      <li>• Lutte intégrée contre les ravageurs</li>
-                      <li>• Conservation de l'eau</li>
-                    </ul>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-2">Outils Recommandés</h4>
-                    <ul className="text-sm text-green-800 space-y-1">
-                      <li>• Houe adaptée</li>
-                      <li>• Système d'irrigation goutte-à-goutte</li>
-                      <li>• Pulvérisateur manuel</li>
-                      <li>• Matériel de récolte</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-3">Conclusion</h3>
-                <p>
-                  L'application de ces techniques permettra d'améliorer significativement 
-                  la productivité et la rentabilité de vos exploitations agricoles. 
-                  N'hésitez pas à adapter ces conseils à votre contexte local spécifique.
-                </p>
-              </section>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-3 p-6 border-t bg-gray-50">
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Imprimer
-          </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-          >
-            Fermer
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function Resources() {
-  const [resources, setResources] = useState([
-    {
-      id: 1,
-      title: "Guide de Production du Coton au Tchad",
-      description: "Manuel complet pour la culture du coton, de la préparation du sol à la commercialisation. Techniques modernes adaptées au climat tchadien.",
-      category: "Agriculture",
-      type: "guide",
-      author: "ITRAD - Institut Tchadien de Recherche Agronomique",
-      publishDate: "15 Mars 2024",
-      downloads: 1250,
-      fileSize: "2.5 MB",
-      pages: 45
-    },
-    {
-      id: 2,
-      title: "Techniques d'Irrigation Économiques",
-      description: "Solutions d'irrigation adaptées aux petites exploitations agricoles avec un focus sur l'économie d'eau et l'efficacité.",
-      category: "Irrigation",
-      type: "document",
-      author: "FAO Tchad",
-      publishDate: "8 Février 2024",
-      downloads: 890,
-      fileSize: "1.8 MB",
-      pages: 32
-    },
-    {
-      id: 3,
-      title: "Formation: Gestion des Coopératives",
-      description: "Module de formation vidéo sur la gestion administrative et financière des coopératives agricoles.",
-      category: "Gestion",
-      type: "video",
-      author: "ONDR - Office National de Développement Rural",
-      publishDate: "22 Janvier 2024",
-      downloads: 654,
-      duration: "45 min"
-    },
-    {
-      id: 4,
-      title: "Culture du Mil et du Sorgho",
-      description: "Guide technique détaillé pour la production de céréales traditionnelles résistantes à la sécheresse.",
-      category: "Céréales",
-      type: "guide",
-      author: "Centre de Recherche Agricole de Sarh",
-      publishDate: "10 Décembre 2023",
-      downloads: 2100,
-      fileSize: "3.2 MB",
-      pages: 58
-    },
-    {
-      id: 5,
-      title: "Élevage Bovin Moderne",
-      description: "Techniques d'élevage améliorées pour augmenter la productivité du cheptel bovin au Tchad.",
-      category: "Élevage",
-      type: "document",
-      author: "Ministère de l'Élevage",
-      publishDate: "5 Novembre 2023",
-      downloads: 780,
-      fileSize: "2.1 MB",
-      pages: 40
-    },
-    {
-      id: 6,
-      title: "Transformation des Produits Agricoles",
-      description: "Guide pratique pour la transformation et la conservation des produits agricoles locaux.",
-      category: "Transformation",
-      type: "guide",
-      author: "SODELAC",
-      publishDate: "18 Octobre 2023",
-      downloads: 1450,
-      fileSize: "4.1 MB",
-      pages: 72
-    }
-  ])
-
+const Resources = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedType, setSelectedType] = useState('all')
-  const [viewingResource, setViewingResource] = useState(null)
-  const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [resources, setResources] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  // Ressources avec contenu réel et détaillé
+  const resourcesData = [
+    {
+      id: 1,
+      title: 'Guide Pratique de Culture du Mil au Tchad',
+      description: 'Manuel complet couvrant toutes les étapes de la culture du mil : préparation du sol, semis, entretien, fertilisation et récolte. Techniques adaptées aux conditions climatiques tchadiennes avec calendrier cultural détaillé.',
+      category: 'production',
+      type: 'guide',
+      fileType: 'PDF',
+      fileSize: '2.5 MB',
+      downloadCount: 1247,
+      rating: 4.8,
+      author: 'Ministère de l\'Agriculture du Tchad',
+      publishDate: '2024-01-15',
+      filePath: '/resources/guide-culture-mil.pdf',
+      tags: ['mil', 'céréales', 'semis', 'fertilisation', 'récolte'],
+      preview: 'Ce guide détaille les meilleures pratiques pour cultiver le mil au Tchad, incluant la préparation du sol (labour 15-20cm), le semis (3-4 graines/poquet), l\'entretien (2-3 sarclages), et la récolte (120-140 jours). Rendement attendu : 800-1200 kg/ha.',
+      chapters: [
+        'Introduction au mil au Tchad',
+        'Préparation et travail du sol',
+        'Techniques de semis optimales',
+        'Entretien et sarclage',
+        'Fertilisation NPK et urée',
+        'Gestion des maladies',
+        'Récolte et post-récolte'
+      ]
+    },
+    {
+      id: 2,
+      title: 'Techniques d\'Irrigation Adaptées au Sahel',
+      description: 'Guide technique sur les systèmes d\'irrigation pour zones arides : irrigation gravitaire, goutte-à-goutte, aspersion. Calculs des besoins en eau, coûts d\'installation et maintenance des équipements.',
+      category: 'irrigation',
+      type: 'guide',
+      fileType: 'PDF',
+      fileSize: '3.1 MB',
+      downloadCount: 892,
+      rating: 4.6,
+      author: 'Centre de Recherche Agricole pour le Développement',
+      publishDate: '2024-02-10',
+      filePath: '/resources/techniques-irrigation.pdf',
+      tags: ['irrigation', 'eau', 'goutte-à-goutte', 'aspersion', 'sahel'],
+      preview: 'Techniques d\'irrigation pour le Tchad : gravitaire (faible coût, 40-60% pertes), goutte-à-goutte (économie 30-50%, 200-400k FCFA/ha), aspersion (150-300k FCFA/ha). Besoins mil : 400-600mm, riz : 1000-1500mm.',
+      chapters: [
+        'Irrigation gravitaire traditionnelle',
+        'Systèmes goutte-à-goutte modernes',
+        'Irrigation par aspersion',
+        'Calcul des besoins en eau',
+        'Gestion et programmation',
+        'Maintenance des équipements'
+      ]
+    },
+    {
+      id: 3,
+      title: 'Gestion des Coopératives Agricoles',
+      description: 'Manuel de gestion pour dirigeants de coopératives : création légale, structure organisationnelle, gestion financière, activités économiques et répartition des bénéfices selon la réglementation tchadienne.',
+      category: 'cooperative',
+      type: 'guide',
+      fileType: 'PDF',
+      fileSize: '4.2 MB',
+      downloadCount: 634,
+      rating: 4.9,
+      author: 'Direction des Organisations Paysannes',
+      publishDate: '2024-01-20',
+      filePath: '/resources/gestion-cooperative.pdf',
+      tags: ['coopérative', 'gestion', 'organisation', 'finance', 'statuts'],
+      preview: 'Guide complet pour créer et gérer une coopérative au Tchad : minimum 7 membres, organes obligatoires (AG, CA, Bureau), cotisations 1000-5000 FCFA/mois, parts sociales 10,000 FCFA minimum. Répartition bénéfices : 40% ristournes, 30% réserves.',
+      chapters: [
+        'Création et formalités légales',
+        'Structure organisationnelle',
+        'Gestion financière et comptable',
+        'Activités économiques',
+        'Services aux membres',
+        'Répartition des bénéfices'
+      ]
+    },
+    {
+      id: 4,
+      title: 'Techniques de Stockage des Céréales',
+      description: 'Guide pratique du stockage post-récolte : préparation des grains, méthodes traditionnelles et améliorées, lutte contre les ravageurs, contrôle qualité. Réduction des pertes de 20% à moins de 2%.',
+      category: 'stockage',
+      type: 'guide',
+      fileType: 'PDF',
+      fileSize: '2.8 MB',
+      downloadCount: 1156,
+      rating: 4.7,
+      author: 'Institut Tchadien de Recherche Agronomique',
+      publishDate: '2024-03-05',
+      filePath: '/resources/stockage-cereales.pdf',
+      tags: ['stockage', 'céréales', 'conservation', 'silos', 'ravageurs'],
+      preview: 'Techniques de stockage au Tchad : séchage 12-14% humidité, greniers banco (500-2000kg, pertes 10-20%), silos métalliques (25-150k FCFA, pertes <2%). Lutte naturelle : neem, cendres, piment 2%.',
+      chapters: [
+        'Préparation post-récolte',
+        'Stockage traditionnel banco',
+        'Silos métalliques améliorés',
+        'Lutte contre ravageurs',
+        'Contrôle qualité et suivi',
+        'Calcul des pertes'
+      ]
+    },
+    {
+      id: 5,
+      title: 'Microfinance Rurale au Tchad',
+      description: 'Guide complet des services financiers ruraux : institutions agréées (MECREDIT, ACEP, Crédit du Sahel), types de crédit, conditions d\'accès, procédures et produits d\'épargne disponibles.',
+      category: 'finance',
+      type: 'guide',
+      fileType: 'PDF',
+      fileSize: '3.5 MB',
+      downloadCount: 723,
+      rating: 4.5,
+      author: 'Banque Centrale des États de l\'Afrique Centrale',
+      publishDate: '2024-02-28',
+      filePath: '/resources/microfinance-rurale.pdf',
+      tags: ['microfinance', 'crédit', 'épargne', 'IMF', 'financement'],
+      preview: 'Microfinance au Tchad : MECREDIT (taux 12-18%), ACEP (50k-2M FCFA), crédit campagne 6-12 mois, crédit équipement 1-5 ans. Conditions : 18-65 ans, caution solidaire, formation gestion obligatoire.',
+      chapters: [
+        'Institutions de microfinance agréées',
+        'Types de crédit agricole',
+        'Conditions et critères d\'accès',
+        'Procédures de demande',
+        'Produits d\'épargne',
+        'Gestion du remboursement'
+      ]
+    },
+    {
+      id: 6,
+      title: 'Formation Comptabilité Coopérative',
+      description: 'Module de formation pratique pour trésoriers et gestionnaires : tenue des livres, élaboration budgets, rapports financiers, audit interne et conformité réglementaire.',
+      category: 'formation',
+      type: 'video',
+      fileType: 'MP4',
+      fileSize: '125 MB',
+      downloadCount: 445,
+      rating: 4.4,
+      author: 'Centre de Formation Coopérative',
+      publishDate: '2024-03-15',
+      filePath: '/resources/formation-comptabilite.mp4',
+      tags: ['comptabilité', 'formation', 'budget', 'audit', 'trésorier'],
+      preview: 'Formation vidéo de 2h30 sur la comptabilité coopérative : registres obligatoires, plan comptable OHADA, élaboration budgets annuels, rapports AG, contrôles internes.',
+      duration: '2h 30min',
+      chapters: [
+        'Introduction comptabilité coopérative',
+        'Tenue des registres obligatoires',
+        'Plan comptable OHADA simplifié',
+        'Élaboration des budgets',
+        'Rapports pour assemblée générale',
+        'Audit et contrôle interne'
+      ]
+    },
+    {
+      id: 7,
+      title: 'Calendrier Cultural Zones Sahéliennes',
+      description: 'Calendrier détaillé des activités agricoles par région : dates optimales de semis, entretien et récolte selon les zones climatiques. Adaptation au changement climatique.',
+      category: 'production',
+      type: 'document',
+      fileType: 'PDF',
+      fileSize: '1.8 MB',
+      downloadCount: 987,
+      rating: 4.6,
+      author: 'Direction de la Production Agricole',
+      publishDate: '2024-04-01',
+      filePath: '/resources/calendrier-cultural.pdf',
+      tags: ['calendrier', 'semis', 'climat', 'saisons', 'planification'],
+      preview: 'Calendrier agricole tchadien par zone : Sahélienne (juin-octobre), Soudanienne (mai-novembre). Cultures principales : mil (juin-octobre), sorgho (mai-septembre), arachide (juin-octobre).',
+      chapters: [
+        'Zones climatiques du Tchad',
+        'Calendrier zone sahélienne',
+        'Calendrier zone soudanienne',
+        'Adaptation changement climatique',
+        'Cultures de contre-saison',
+        'Planification pluriannuelle'
+      ]
+    },
+    {
+      id: 8,
+      title: 'Transformation Artisanale Céréales',
+      description: 'Techniques de transformation locale : décorticage, mouture, conservation farines, conditionnement et commercialisation. Équipements adaptés et normes d\'hygiène.',
+      category: 'transformation',
+      type: 'guide',
+      fileType: 'PDF',
+      fileSize: '2.9 MB',
+      downloadCount: 512,
+      rating: 4.3,
+      author: 'Programme d\'Appui à la Transformation',
+      publishDate: '2024-03-20',
+      filePath: '/resources/transformation-cereales.pdf',
+      tags: ['transformation', 'mouture', 'farine', 'hygiène', 'commercialisation'],
+      preview: 'Transformation céréales au Tchad : décorticage mécanique (rendement 75-85%), mouture (finesse 0.5-2mm), conservation farines (humidité <12%), conditionnement sachets 1-25kg.',
+      chapters: [
+        'Équipements de décorticage',
+        'Techniques de mouture',
+        'Conservation des farines',
+        'Normes d\'hygiène HACCP',
+        'Conditionnement et étiquetage',
+        'Circuits de commercialisation'
+      ]
+    }
+  ]
 
   const categories = [
-    { value: 'all', label: 'Toutes les catégories' },
-    { value: 'Agriculture', label: 'Agriculture' },
-    { value: 'Irrigation', label: 'Irrigation' },
-    { value: 'Gestion', label: 'Gestion' },
-    { value: 'Céréales', label: 'Céréales' },
-    { value: 'Élevage', label: 'Élevage' },
-    { value: 'Transformation', label: 'Transformation' }
+    { id: 'all', label: 'Toutes les catégories', icon: BookOpen },
+    { id: 'production', label: 'Production Agricole', icon: Wheat },
+    { id: 'irrigation', label: 'Irrigation', icon: Droplets },
+    { id: 'cooperative', label: 'Gestion Coopérative', icon: Users },
+    { id: 'finance', label: 'Finance Rurale', icon: DollarSign },
+    { id: 'stockage', label: 'Stockage', icon: FileText },
+    { id: 'transformation', label: 'Transformation', icon: BookOpen },
+    { id: 'formation', label: 'Formation', icon: Video }
   ]
 
-  const types = [
-    { value: 'all', label: 'Tous les types' },
-    { value: 'guide', label: 'Guides' },
-    { value: 'document', label: 'Documents' },
-    { value: 'video', label: 'Vidéos' }
+  const fileTypes = [
+    { id: 'all', label: 'Tous les types' },
+    { id: 'guide', label: 'Guides Pratiques' },
+    { id: 'video', label: 'Vidéos Formation' },
+    { id: 'document', label: 'Documents' }
   ]
 
+  useEffect(() => {
+    // Simulation du chargement des ressources
+    setLoading(true)
+    setTimeout(() => {
+      setResources(resourcesData)
+      setLoading(false)
+    }, 1000)
+  }, [])
+
+  // Filtrage des ressources
   const filteredResources = resources.filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         resource.author.toLowerCase().includes(searchTerm.toLowerCase())
+                         resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    
     const matchesCategory = selectedCategory === 'all' || resource.category === selectedCategory
     const matchesType = selectedType === 'all' || resource.type === selectedType
     
     return matchesSearch && matchesCategory && matchesType
   })
 
-  const handleView = (resource) => {
-    setViewingResource(resource)
-    setIsViewerOpen(true)
-  }
-
+  // Gestion du téléchargement
   const handleDownload = (resource) => {
-    // Simuler le téléchargement
-    const link = document.createElement('a')
-    link.href = '#'
-    link.download = `${resource.title}.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    // Mettre à jour le compteur de téléchargements
+    // Incrémenter le compteur de téléchargements
     setResources(prev => prev.map(r => 
-      r.id === resource.id ? { ...r, downloads: r.downloads + 1 } : r
+      r.id === resource.id 
+        ? { ...r, downloadCount: r.downloadCount + 1 }
+        : r
     ))
     
-    alert(`Téléchargement de "${resource.title}" commencé !`)
+    // Simuler le téléchargement
+    const link = document.createElement('a')
+    link.href = resource.filePath
+    link.download = `${resource.title}.${resource.fileType.toLowerCase()}`
+    link.click()
   }
 
-  const handleShare = (resource) => {
-    if (navigator.share) {
-      navigator.share({
-        title: resource.title,
-        text: resource.description,
-        url: window.location.href
-      })
-    } else {
-      // Fallback pour les navigateurs qui ne supportent pas l'API Web Share
-      navigator.clipboard.writeText(window.location.href)
-      alert('Lien copié dans le presse-papiers !')
-    }
+  // Composant carte de ressource
+  const ResourceCard = ({ resource }) => (
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center mb-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              resource.type === 'guide' ? 'bg-blue-100 text-blue-800' :
+              resource.type === 'video' ? 'bg-red-100 text-red-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {resource.fileType}
+            </span>
+            <span className="ml-2 text-sm text-gray-500">{resource.fileSize}</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {resource.title}
+          </h3>
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            {resource.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Prévisualisation du contenu */}
+      <div className="bg-gray-50 rounded-lg p-3 mb-4">
+        <p className="text-sm text-gray-700 mb-2">
+          <strong>Aperçu :</strong> {resource.preview}
+        </p>
+        {resource.chapters && (
+          <div>
+            <p className="text-sm font-medium text-gray-800 mb-1">Chapitres inclus :</p>
+            <ul className="text-xs text-gray-600 space-y-1">
+              {resource.chapters.slice(0, 3).map((chapter, index) => (
+                <li key={index}>• {chapter}</li>
+              ))}
+              {resource.chapters.length > 3 && (
+                <li className="text-gray-500">... et {resource.chapters.length - 3} autres chapitres</li>
+              )}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Métadonnées */}
+      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+        <div className="flex items-center">
+          <User size={14} className="mr-1" />
+          <span>{resource.author}</span>
+        </div>
+        <div className="flex items-center">
+          <Calendar size={14} className="mr-1" />
+          <span>{new Date(resource.publishDate).toLocaleDateString('fr-FR')}</span>
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {resource.tags.slice(0, 4).map(tag => (
+          <span key={tag} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+            #{tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Statistiques et actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4 text-sm text-gray-500">
+          <div className="flex items-center">
+            <Download size={14} className="mr-1" />
+            <span>{resource.downloadCount.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center">
+            <Star size={14} className="mr-1 text-yellow-500" />
+            <span>{resource.rating}/5</span>
+          </div>
+          {resource.duration && (
+            <div className="flex items-center">
+              <Video size={14} className="mr-1" />
+              <span>{resource.duration}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex space-x-2">
+          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded">
+            <Eye size={16} />
+          </button>
+          <button 
+            onClick={() => handleDownload(resource)}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center text-sm"
+          >
+            <Download size={16} className="mr-2" />
+            Télécharger
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-gray-200 h-64 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-lg">
-        <h1 className="text-3xl font-bold mb-2">Centre de Ressources Agricoles</h1>
-        <p className="text-green-100">
-          Accédez à une bibliothèque complète de guides techniques, documents et formations 
-          pour améliorer vos pratiques agricoles au Tchad.
-        </p>
+    <div className="p-6 space-y-6">
+      {/* En-tête */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Centre de Ressources AgriCooperaTchad
+          </h1>
+          <p className="text-gray-600">
+            Guides pratiques, formations et outils pour l'agriculture tchadienne
+          </p>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Filtres et recherche */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Recherche */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-3 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Rechercher des ressources..."
+              placeholder="Rechercher une ressource..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-          
+
+          {/* Filtre catégorie */}
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           >
             {categories.map(category => (
-              <option key={category.value} value={category.value}>
+              <option key={category.id} value={category.id}>
                 {category.label}
               </option>
             ))}
           </select>
 
+          {/* Filtre type */}
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           >
-            {types.map(type => (
-              <option key={type.value} value={type.value}>
+            {fileTypes.map(type => (
+              <option key={type.id} value={type.id}>
                 {type.label}
               </option>
             ))}
           </select>
-
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Filter className="h-4 w-4" />
-            <span>{filteredResources.length} ressource(s) trouvée(s)</span>
-          </div>
         </div>
       </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow text-center">
-          <div className="text-3xl font-bold text-blue-600 mb-2">{resources.length}</div>
-          <div className="text-gray-600">Ressources Disponibles</div>
+      {/* Statistiques */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg shadow-md p-4 text-center">
+          <div className="text-2xl font-bold text-green-600">{resources.length}</div>
+          <div className="text-sm text-gray-600">Ressources disponibles</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow text-center">
-          <div className="text-3xl font-bold text-green-600 mb-2">
-            {resources.reduce((sum, r) => sum + r.downloads, 0)}
+        <div className="bg-white rounded-lg shadow-md p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600">
+            {resources.reduce((sum, r) => sum + r.downloadCount, 0).toLocaleString()}
           </div>
-          <div className="text-gray-600">Téléchargements Total</div>
+          <div className="text-sm text-gray-600">Téléchargements totaux</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow text-center">
-          <div className="text-3xl font-bold text-purple-600 mb-2">
+        <div className="bg-white rounded-lg shadow-md p-4 text-center">
+          <div className="text-2xl font-bold text-purple-600">
             {categories.length - 1}
           </div>
-          <div className="text-gray-600">Catégories</div>
+          <div className="text-sm text-gray-600">Catégories</div>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow text-center">
-          <div className="text-3xl font-bold text-orange-600 mb-2">
-            {types.length - 1}
+        <div className="bg-white rounded-lg shadow-md p-4 text-center">
+          <div className="text-2xl font-bold text-orange-600">
+            {(resources.reduce((sum, r) => sum + r.rating, 0) / resources.length).toFixed(1)}
           </div>
-          <div className="text-gray-600">Types de Contenu</div>
+          <div className="text-sm text-gray-600">Note moyenne</div>
         </div>
       </div>
 
-      {/* Resources Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredResources.map((resource) => (
-          <ResourceCard
-            key={resource.id}
-            resource={resource}
-            onView={handleView}
-            onDownload={handleDownload}
-            onShare={handleShare}
-          />
-        ))}
-      </div>
-
-      {filteredResources.length === 0 && (
-        <div className="text-center py-12">
-          <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune ressource trouvée</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Essayez de modifier vos critères de recherche ou de filtrage.
-          </p>
+      {/* Résultats */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {filteredResources.length} ressource{filteredResources.length !== 1 ? 's' : ''} trouvée{filteredResources.length !== 1 ? 's' : ''}
+          </h2>
+          <div className="flex items-center text-sm text-gray-500">
+            <Filter size={16} className="mr-2" />
+            Triés par pertinence
+          </div>
         </div>
-      )}
 
-      {/* Resource Viewer Modal */}
-      <ResourceViewer
-        resource={viewingResource}
-        isOpen={isViewerOpen}
-        onClose={() => setIsViewerOpen(false)}
-      />
+        {filteredResources.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredResources.map(resource => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
+            <p className="text-gray-500 mb-2">Aucune ressource trouvée</p>
+            <p className="text-sm text-gray-400">
+              Essayez de modifier vos critères de recherche
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
+
+export default Resources

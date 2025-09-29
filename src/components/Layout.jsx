@@ -12,13 +12,12 @@ import {
 } from "lucide-react"
 
 const menuItems = [
-    { icon: Home, label: "Tableau de bord", path: "/" },
+    { icon: Package, label: "Landing Page", path: "/" },
+    { icon: Home, label: "Tableau de bord", path: "/Home" },
     { icon: Users, label: "Cooperatives", path: "/cooperatives" },
     { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
-    { icon: DollarSign, label: "Payement", path: "/payment" },
     { icon: DollarSign, label: "Finance", path: "/finance" },
     { icon: BookOpen, label: "Ressources", path: "/resources" },
-    { icon: Package, label: "Inventaire", path: "/inventory" }
 ]
 
 export default function Layout({ children }) {
