@@ -1,193 +1,181 @@
 // components/AuthModal.jsx
 import React, { useState, useEffect } from 'react';
+import { X, Mail, Lock, User, Phone, RefreshCw, ArrowLeft } from 'lucide-react';
+import { apiService } from '../services/api';
 
 const AuthModal = ({ isOpen, onClose, defaultUserType = '' }) => {
-    const [authMode, setAuthMode] = useState('login');
+    const [currentStep, setCurrentStep] = useState('selection'); // selection, login, register, forgot, otp
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        confirmPassword: '',
         nom: '',
         prenom: '',
         telephone: '',
-        role: defaultUserType || 'visiteur'
+        role: defaultUserType || 'admin',
+        otp: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+    const [success, setSuccess] = useState('');
+    const [countdown, setCountdown] = useState(0);
+    const [pendingEmail, setPendingEmail] = useState('');
 
-    // Réinitialiser le formulaire quand la modale s'ouvre
     useEffect(() => {
-        if (isOpen) {
-            setFormData(prev => ({
-                ...prev,
-                role: defaultUserType || 'visiteur',
-                email: '',
-                password: '',
-                confirmPassword: '',
-                nom: '',
-                prenom: '',
-                telephone: ''
-            }));
-            setError('');
-            setSuccessMessage('');
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(countdown - 1), 1000);
         }
-    }, [isOpen, defaultUserType]);
+        return () => clearTimeout(timer);
+    }, [countdown]);
 
-    // Service API simulé pour le débogage
-    const apiService = {
-        login: async (credentials) => {
-            console.log('🔐 Tentative de connexion:', credentials);
-            
-            // Simulation d'un délai réseau
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Pour le débogage, acceptons toujours la connexion
-            return {
-                success: true,
-                token: 'fake-jwt-token-' + Date.now(),
-                user: {
-                    email: credentials.email,
-                    role: formData.role
-                }
-            };
-        },
-        
-        register: async (userData) => {
-            console.log('📝 Tentative d\'inscription:', userData);
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            return {
-                success: true,
-                message: 'Compte créé avec succès'
-            };
-        },
-        
-        forgotPassword: async (emailData) => {
-            console.log('📧 Mot de passe oublié:', emailData);
-            
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            return {
-                success: true,
-                message: 'Email envoyé'
-            };
-        }
+    const handleClose = () => {
+        setCurrentStep('selection');
+        setFormData({
+            email: '',
+            password: '',
+            nom: '',
+            prenom: '',
+            telephone: '',
+            role: defaultUserType || 'visiteur',
+            otp: ''
+        });
+        setError('');
+        setSuccess('');
+        setCountdown(0);
+        setPendingEmail('');
+        onClose();
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('🔄 Début de la soumission du formulaire');
-        
         setLoading(true);
         setError('');
-        setSuccessMessage('');
+        setSuccess('');
 
         try {
-            console.log('📋 Validation du formulaire...');
-            
-            // Validation de base
-            if (!formData.email || !formData.email.includes('@')) {
-                throw new Error('Adresse email invalide');
+            switch (currentStep) {
+                case 'login':
+                    await handleLogin();
+                    break;
+                case 'register':
+                    await handleRegister();
+                    break;
+                case 'forgot':
+                    await handleForgotPassword();
+                    break;
+                case 'otp':
+                    await handleOTPVerification();
+                    break;
+                case 'reset':
+                    await handlePasswordReset();
+                    break;
             }
-
-            if (authMode !== 'forgot' && !formData.password) {
-                throw new Error('Mot de passe requis');
-            }
-
-            if (authMode === 'register') {
-                if (formData.password !== formData.confirmPassword) {
-                    throw new Error('Les mots de passe ne correspondent pas');
-                }
-                if (formData.password.length < 6) {
-                    throw new Error('Le mot de passe doit contenir au moins 6 caractères');
-                }
-            }
-
-            console.log('✅ Validation réussie, appel API...');
-
-            let result;
-
-            if (authMode === 'login') {
-                result = await apiService.login({
-                    email: formData.email,
-                    password: formData.password
-                });
-                
-            } else if (authMode === 'register') {
-                result = await apiService.register(formData);
-                
-            } else if (authMode === 'forgot') {
-                result = await apiService.forgotPassword({
-                    email: formData.email
-                });
-            }
-
-            console.log('📨 Réponse API:', result);
-
-            if (!result.success) {
-                throw new Error(result.message || 'Erreur lors de l\'opération');
-            }
-
-            // Gestion des succès
-            if (authMode === 'login') {
-                console.log('🎉 Connexion réussie!');
-                
-                // Stocker le token
-                if (result.token) {
-                    localStorage.setItem('authToken', result.token);
-                    localStorage.setItem('userRole', formData.role);
-                    localStorage.setItem('userEmail', formData.email);
-                }
-                
-                setSuccessMessage('Connexion réussie! Redirection...');
-                
-                setTimeout(() => {
-                    onClose();
-                    window.location.href = '/dashboard';
-                }, 1000);
-                
-            } else if (authMode === 'register') {
-                console.log('🎉 Inscription réussie!');
-                setSuccessMessage('Compte créé avec succès! Connexion automatique...');
-                
-                // Auto-login après inscription
-                setTimeout(async () => {
-                    try {
-                        const loginResult = await apiService.login({
-                            email: formData.email,
-                            password: formData.password
-                        });
-                        
-                        if (loginResult.success && loginResult.token) {
-                            localStorage.setItem('authToken', loginResult.token);
-                            localStorage.setItem('userRole', formData.role);
-                            localStorage.setItem('userEmail', formData.email);
-                            onClose();
-                            window.location.href = '/dashboard';
-                        }
-                    } catch (loginError) {
-                        setError('Compte créé mais échec de la connexion automatique');
-                        setAuthMode('login');
-                    }
-                }, 2000);
-                
-            } else if (authMode === 'forgot') {
-                console.log('📧 Email de réinitialisation envoyé!');
-                setSuccessMessage('Un lien de réinitialisation a été envoyé à votre adresse email.');
-                
-                setTimeout(() => {
-                    setAuthMode('login');
-                }, 3000);
-            }
-            
         } catch (err) {
-            console.error('❌ Erreur:', err);
-            setError(err.message || 'Une erreur est survenue. Veuillez réessayer.');
+            setError(err.message || 'Une erreur est survenue');
         } finally {
             setLoading(false);
-            console.log('🏁 Fin du traitement');
+        }
+    };
+
+    const handleLogin = async () => {
+        const result = await apiService.login({
+            email: formData.email,
+            password: formData.password
+        });
+        // log result
+        console.log('📨 handleLogin appelé avec:', result);      
+        
+
+        if (result.success) {
+            handleClose();
+            // redirection vers la page d'accueil
+            window.location.href = '/home';
+            
+            // log current route
+            console.log('📨 Current route:', window.location.href);
+            // window.location.reload();
+        } else if (result.requiresVerification) {
+            setPendingEmail(formData.email);
+            setCurrentStep('otp');
+            setSuccess('Veuillez vérifier votre email pour vous connecter');
+        }
+    };
+
+    const handleRegister = async () => {
+        const result = await apiService.register(formData);
+
+        if (result.success) {
+            setPendingEmail(formData.email);
+            setCurrentStep('otp');
+            setSuccess('Un code de vérification a été envoyé à votre email');
+            setCountdown(60); // 60 secondes avant de pouvoir renvoyer
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        console.log('📨 handleForgotPassword appelé avec:', formData);
+        console.log('🔧 Calling handleForgotPassword with:', formData.email);
+        
+        const result = await apiService.forgotPassword(formData.email);
+
+        if (result.success) {
+            setPendingEmail(formData.email);
+            setCurrentStep('reset');
+            setSuccess('Un code de réinitialisation a été envoyé à votre email');
+            setCountdown(60);
+        }
+    };
+
+    const handleOTPVerification = async () => {
+        const result = await apiService.verifyEmail(
+            pendingEmail,
+            formData.otp
+        );
+
+
+        if (result.success) {
+            setSuccess('Email vérifié avec succès !');
+            setTimeout(() => {
+                handleClose();
+                window.location.reload();
+            }, 2000);
+        }
+    };
+
+    const handlePasswordReset = async () => {
+        const result = await apiService.resetPassword(
+            pendingEmail,
+            formData.otp,
+            formData.password
+        );
+
+
+        if (result.success) {
+            setSuccess('Mot de passe réinitialisé avec succès !');
+            setTimeout(() => {
+                setCurrentStep('login');
+                setFormData(prev => ({ ...prev, password: '', otp: '' }));
+            }, 2000);
+        }
+    };
+
+    const handleResendOTP = async () => {
+        if (countdown > 0) return;
+
+        setLoading(true);
+        try {
+            const type = currentStep === 'otp' ? 'email_verification' : 'password_reset';
+            const result = await apiService.resendOTP(pendingEmail);
+
+
+            if (result.success) {
+                setSuccess('Nouveau code envoyé !');
+                setCountdown(60);
+            }
+        } catch (err) {
+            setError(err.message || 'Erreur lors de l\'envoi du code');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -196,259 +184,369 @@ const AuthModal = ({ isOpen, onClose, defaultUserType = '' }) => {
             ...formData,
             [e.target.name]: e.target.value
         });
-        if (error) setError('');
-    };
-
-    const getTitle = () => {
-        switch (authMode) {
-            case 'login': return 'Connexion';
-            case 'register': return 'Inscription';
-            case 'forgot': return 'Réinitialiser le mot de passe';
-            default: return 'Authentification';
-        }
-    };
-
-    const getSubmitButtonText = () => {
-        if (loading) {
-            return (
-                <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Chargement...
-                </div>
-            );
-        }
-        
-        switch (authMode) {
-            case 'login': return 'Se connecter';
-            case 'register': return 'S\'inscrire';
-            case 'forgot': return 'Envoyer le lien';
-            default: return 'Valider';
-        }
     };
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-                {/* En-tête */}
-                <div className="flex justify-between items-center p-6 border-b">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">{getTitle()}</h2>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {authMode === 'login' && 'Connectez-vous à votre compte'}
-                            {authMode === 'register' && 'Créez un nouveau compte'}
-                            {authMode === 'forgot' && 'Entrez votre email pour réinitialiser votre mot de passe'}
-                            {formData.role && formData.role !== 'visiteur' && ` - Profil : ${formData.role}`}
-                        </p>
+    const renderStep = () => {
+        switch (currentStep) {
+            case 'selection':
+                return (
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-center">Comment souhaitez-vous continuer ?</h3>
+                        <button
+                            onClick={() => setCurrentStep('login')}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-medium"
+                        >
+                            Se connecter
+                        </button>
+                        <button
+                            onClick={() => setCurrentStep('register')}
+                            className="w-full border border-green-600 text-green-600 hover:bg-green-50 p-3 rounded-lg font-medium"
+                        >
+                            Créer un compte
+                        </button>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700 text-2xl font-light disabled:opacity-50"
-                        disabled={loading}
-                    >
-                        ×
-                    </button>
-                </div>
+                );
 
-                <div className="p-6">
-                    {/* Messages d'erreur et de succès */}
-                    {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-                            ❌ {error}
-                        </div>
-                    )}
-
-                    {successMessage && (
-                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-sm">
-                            ✅ {successMessage}
-                        </div>
-                    )}
-
-                    {/* Formulaire */}
+            case 'login':
+                return (
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Champs pour l'inscription */}
-                        {authMode === 'register' && (
-                            <>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <input 
-                                            type="text"
-                                            name="prenom"
-                                            placeholder="Prénom"
-                                            value={formData.prenom}
-                                            onChange={handleChange}
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            required
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                    <div>
-                                        <input 
-                                            type="text"
-                                            name="nom"
-                                            placeholder="Nom"
-                                            value={formData.nom}
-                                            onChange={handleChange}
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            required
-                                            disabled={loading}
-                                        />
-                                    </div>
+                        <div className="text-center mb-2">
+                            <h3 className="text-lg font-semibold">Connexion</h3>
+                            <p className="text-sm text-gray-600">Accédez à votre compte</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 p-2 border rounded-md"
+                                    required
+                                />
+                            </div>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="password"
+                                    name="password"
+                                    placeholder="Mot de passe"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 p-2 border rounded-md"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setCurrentStep('forgot')}
+                            className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                            Mot de passe oublié ?
+                        </button>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white p-2 rounded-md disabled:opacity-50"
+                        >
+                            {loading ? 'Connexion...' : 'Se connecter'}
+                        </button>
+
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentStep('register')}
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                            >
+                                Créer un nouveau compte
+                            </button>
+                        </div>
+                    </form>
+                );
+
+            case 'register':
+                return (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="text-center mb-2">
+                            <h3 className="text-lg font-semibold">Inscription</h3>
+                            <p className="text-sm text-gray-600">Créez votre compte {formData.role}</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="relative">
+                                    <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        name="prenom"
+                                        placeholder="Prénom"
+                                        value={formData.prenom}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 p-2 border rounded-md"
+                                        required
+                                    />
                                 </div>
-                                
-                                <input 
+                                <div className="relative">
+                                    <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        name="nom"
+                                        placeholder="Nom"
+                                        value={formData.nom}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 p-2 border rounded-md"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 p-2 border rounded-md"
+                                    required
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
                                     type="tel"
                                     name="telephone"
                                     placeholder="Téléphone"
                                     value={formData.telephone}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    className="w-full pl-10 p-2 border rounded-md"
                                     required
-                                    disabled={loading}
                                 />
+                            </div>
 
-                                <select 
-                                    name="role"
-                                    value={formData.role}
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="password"
+                                    name="password"
+                                    placeholder="Mot de passe"
+                                    value={formData.password}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    className="w-full pl-10 p-2 border rounded-md"
                                     required
-                                    disabled={loading}
-                                >
-                                    <option value="visiteur">Visiteur</option>
-                                    <option value="cooperative">Coopérative Agricole</option>
-                                    <option value="acheteur">Acheteur/Commerçant</option>
-                                    <option value="institution_financiere">Institution Financière</option>
-                                    <option value="fournisseur">Fournisseur</option>
-                                    <option value="admin">Administrateur</option>
-                                </select>
-                            </>
-                        )}
+                                />
+                            </div>
 
-                        {/* Champ email pour tous les modes */}
-                        <div>
-                            <input 
+                            <select
+                                name="role"
+                                value={formData.role}
+                                onChange={handleChange}
+                                className="w-full p-2 border rounded-md"
+                                required
+                            >
+                                <option value="admin">Administrateur</option>
+                                <option value="visiteur">Visiteur</option>
+                                <option value="cooperative">Coopérative Agricole</option>
+                                <option value="acheteur">Acheteur/Commerçant</option>
+                                <option value="institution_financiere">Institution Financière</option>
+                                <option value="fournisseur">Fournisseur</option>
+                            </select>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white p-2 rounded-md disabled:opacity-50"
+                        >
+                            {loading ? 'Inscription...' : 'S\'inscrire'}
+                        </button>
+
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentStep('login')}
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                            >
+                                Déjà un compte ? Se connecter
+                            </button>
+                        </div>
+                    </form>
+                );
+
+            case 'forgot':
+                return (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="text-center mb-2">
+                            <h3 className="text-lg font-semibold">Mot de passe oublié</h3>
+                            <p className="text-sm text-gray-600">Entrez votre email pour recevoir un code de réinitialisation</p>
+                        </div>
+
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                            <input
                                 type="email"
                                 name="email"
-                                placeholder="hadjehaouamahamatissa@gmail.com"
+                                placeholder="Email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className="w-full pl-10 p-2 border rounded-md"
                                 required
-                                disabled={loading}
                             />
                         </div>
 
-                        {/* Champs mot de passe (sauf pour forgot) */}
-                        {authMode !== 'forgot' && (
-                            <>
-                                <div>
-                                    <input 
-                                        type="password"
-                                        name="password"
-                                        placeholder={authMode === 'register' ? 'Créez un mot de passe' : 'Mot de passe'}
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                        required
-                                        minLength={6}
-                                        disabled={loading}
-                                    />
-                                </div>
-
-                                {/* Confirmation de mot de passe pour l'inscription */}
-                                {authMode === 'register' && (
-                                    <div>
-                                        <input 
-                                            type="password"
-                                            name="confirmPassword"
-                                            placeholder="Confirmez le mot de passe"
-                                            value={formData.confirmPassword}
-                                            onChange={handleChange}
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            required
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Lien mot de passe oublié (seulement en mode login) */}
-                        {authMode === 'login' && (
-                            <div className="text-right">
-                                <button 
-                                    type="button"
-                                    onClick={() => setAuthMode('forgot')}
-                                    className="text-sm text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    Mot de passe oublié ?
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Bouton de soumission */}
-                        <button 
+                        <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white p-2 rounded-md disabled:opacity-50"
                         >
-                            {getSubmitButtonText()}
+                            {loading ? 'Envoi...' : 'Envoyer le code'}
+                        </button>
+
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentStep('login')}
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                            >
+                                Retour à la connexion
+                            </button>
+                        </div>
+                    </form>
+                );
+
+            case 'otp':
+            case 'reset':
+                const isVerification = currentStep === 'otp';
+
+                return (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="text-center mb-2">
+                            <h3 className="text-lg font-semibold">
+                                {isVerification ? 'Vérification Email' : 'Réinitialisation'}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                                {isVerification
+                                    ? 'Entrez le code envoyé à votre email'
+                                    : 'Entrez le code et votre nouveau mot de passe'
+                                }
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={formData.otp}
+                                    onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
+                                    placeholder="Code à 6 chiffres"
+                                    className="w-full pl-10 p-2 border rounded-md text-center text-lg tracking-widest"
+                                    maxLength={6}
+                                    required
+                                />
+                            </div>
+
+                            {!isVerification && (
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        placeholder="Nouveau mot de passe"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        className="w-full pl-10 p-2 border rounded-md"
+                                        required
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                            <button
+                                type="button"
+                                onClick={handleResendOTP}
+                                disabled={countdown > 0 || loading}
+                                className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                <span>
+                                    {countdown > 0 ? `Renvoyer (${countdown}s)` : 'Renvoyer le code'}
+                                </span>
+                            </button>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white p-2 rounded-md disabled:opacity-50"
+                        >
+                            {loading ? 'Vérification...' : (isVerification ? 'Vérifier' : 'Réinitialiser')}
                         </button>
                     </form>
+                );
+        }
+    };
 
-                    {/* Liens de navigation entre les formulaires */}
-                    <div className="text-center mt-4 space-y-2">
-                        {authMode === 'login' && (
-                            <p className="text-sm text-gray-600">
-                                Pas de compte ?{' '}
-                                <button 
-                                    onClick={() => setAuthMode('register')}
-                                    className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    Créer un compte
-                                </button>
-                            </p>
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full mx-auto">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b">
+                    <div className="flex items-center space-x-2">
+                        {(currentStep !== 'selection') && (
+                            <button
+                                onClick={() => {
+                                    const previousSteps = {
+                                        login: 'selection',
+                                        register: 'selection',
+                                        forgot: 'login',
+                                        otp: 'register',
+                                        reset: 'forgot'
+                                    };
+                                    setCurrentStep(previousSteps[currentStep] || 'selection');
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
                         )}
-
-                        {authMode === 'register' && (
-                            <p className="text-sm text-gray-600">
-                                Déjà un compte ?{' '}
-                                <button 
-                                    onClick={() => setAuthMode('login')}
-                                    className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    Se connecter
-                                </button>
-                            </p>
-                        )}
-
-                        {authMode === 'forgot' && (
-                            <p className="text-sm text-gray-600">
-                                <button 
-                                    onClick={() => setAuthMode('forgot')}
-                                    className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
-                                    disabled={loading}
-                                >
-                                    ← Retour à la connexion
-                                </button>
-                            </p>
-                        )}
+                        <h2 className="text-xl font-bold">AgriCooperaTchad</h2>
                     </div>
+                    <button
+                        onClick={handleClose}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        disabled={loading}
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                    {/* Section débogage (à retirer en production) */}
-                    <div className="mt-4 p-3 bg-gray-100 rounded-lg text-xs">
-                        <div className="font-mono text-gray-600">
-                            <div>Mode: {authMode}</div>
-                            <div>Loading: {loading ? 'true' : 'false'}</div>
-                            <div>Email: {formData.email}</div>
-                            <div>Role: {formData.role}</div>
+                {/* Content */}
+                <div className="p-6">
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {error}
                         </div>
-                    </div>
+                    )}
+
+                    {success && (
+                        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                            {success}
+                        </div>
+                    )}
+
+                    {renderStep()}
                 </div>
             </div>
         </div>

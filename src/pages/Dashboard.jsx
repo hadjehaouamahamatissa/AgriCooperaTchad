@@ -11,7 +11,7 @@ const StatCard = ({ title, value, icon: Icon, color = "blue" }) => {
     }
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-gray-100 rounded-lg shadow p-6">
             <div className="flex items-center">
              <div className={`${colorClasses[color]} rounded-md p-3`}>
                     <Icon className="h-6 w-6 text-white" />

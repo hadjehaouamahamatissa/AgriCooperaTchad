@@ -100,7 +100,7 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }) => {
         available: true,
         rating: 0,
         reviews: 0,
-        seller: "Ma Cooperative"
+        seller: ""
     });
 
     const handleSubmit = (e) => {
@@ -119,7 +119,7 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }) => {
             available: true,
             rating: 0,
             reviews: 0,
-            seller: "Ma Cooperative"
+            seller: ""
         });
     };
 
@@ -131,7 +131,7 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }) => {
                 <h2 className="text-xl font-bold mb-4">Publier un produit</h2>
                 <form
                     onSubmit={handleSubmit}
-                    className="space-y-4"
+                    className="space-y-6"
                 >
                     <input
                         type="text"
@@ -155,34 +155,35 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }) => {
                             value={product.price}
                             onChange={(e) => setProduct({ ...product, price: parseFloat(e.target.value) || 0 })}
                             required
-                            className="flex-1 border px-3 py-2 rounded"
+                            className=" border px-2 py-1 rounded"
                         />
+
                         <input
                             text="text"
                             placeholder="Unite"
                             value={product.unit}
                             onChange={(e) => setProduct({ ...product, unit: e.target.value })}
-                            className="flex-1 border px-3 py-2 rounded"
+                            className=" border px-3 py-2 rounded"
                         />
                     </div>
                     <input
-                       text="text"
-                       placeholder="Localisation"
-                       value={location}
-                       onChange={(e) => setProduct({ ...product, location: e.target.value })}
-                       className="w-full border px-3 py-2 rounded"
+                        text="text"
+                        placeholder="Nom de la cooperative"
+                        value={product.name}
+                        onChange={(e) => setProduct({ ...product, name: e.target.value })}
+                        className="w-full border px-3 py-2 rounded"
                     />
                     <input
-                       text="text"
-                       placeholder="URL image"
-                       value={product.image}
-                       onChange={(e) => setProduct({ ...product, image: e.target.value })}
-                       className="w-full border px-3 py-2 rounded"
+                        text="text"
+                        placeholder="image"
+                        value={product.image}
+                        onChange={(e) => setProduct({ ...product, image: e.target.value })}
+                        className="w-full border px-3 py-2 rounded"
                     />
-                    <select 
-                       value={product.category} 
-                       onChange={(e) => setProduct({ ...product, category: e.target.value })}
-                       className="w-full border px-3 py-2 rounded"
+                    <select
+                        value={product.category}
+                        onChange={(e) => setProduct({ ...product, category: e.target.value })}
+                        className="w-full border px-3 py-2 rounded"
                     >
                         <option value="céréales">Céréales</option>
                         <option value="leguimineuse">Leguimineuse</option>
@@ -192,24 +193,24 @@ const AddProductModal = ({ isOpen, onClose, onAddProduct }) => {
                         <option value="AUtres">Autres</option>
                     </select>
                     <input
-                       type="Number"
-                       placeholder="Nombre de Stock"
-                       value={product.stock}
-                       onChange={(e) => setProduct({...product, stock: parseInt(e.target.value) || 0 })}
-                       className="w-full border px-3 py-2 rounded"
+                        type="Number"
+                        placeholder="Nombre de Stock"
+                        value={product.stock}
+                        onChange={(e) => setProduct({ ...product, stock: parseInt(e.target.value) || 0 })}
+                        className="w-full border px-3 py-2 rounded"
                     />
 
                     <div className="flex justify-end gap-2">
                         <button
-                          type="button"
-                          onClick={onClose}
-                          className="px-4 py-2 border rounded"
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 border rounded"
                         >
                             Annuler
                         </button>
                         <button
-                          type="submit"
-                          className="px-4 py-2 bg-green-600 text-white rounded"
+                            type="submit"
+                            className="px-4 py-2 bg-green-600 text-white rounded"
                         >
                             Publier
                         </button>

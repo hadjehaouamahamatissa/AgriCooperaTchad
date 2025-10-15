@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 
 const menuItems = [
-    { icon: Package, label: "Landing Page", path: "/" },
+    // { icon: Package, label: "Landing Page", path: "/" },
     { icon: Home, label: "Tableau de bord", path: "/Home" },
     { icon: Users, label: "Cooperatives", path: "/cooperatives" },
     { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
@@ -25,9 +25,9 @@ export default function Layout({ children }) {
     const location = useLocation()
 
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen bg-gradient-to-br hover:from-green-700 hover:to-blue-700">
             { /* Sidebar*/}
-            <div className={`bg-white text-black w-64 min-h-screen p-4 ${sidebarOpen ? "block" : "hidden"} md:block`}>
+            <div className={`bg-white/80 border-green-200 text-black w-64 min-h-screen p-4 ${sidebarOpen ? "block" : "hidden"} md:block`}>
                 <div className="flex items-center justify-between mb-8">
                     <h1 className="text-xl font-bold">AGRICOOPERATCHAD</h1>
                     <button 
@@ -51,7 +51,7 @@ export default function Layout({ children }) {
                                         className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
                                             isActive
                                                 ? "bg-black-900 text-black font-semibold"
-                                                : "text-black-100 hover:bg-black hover:text-white"
+                                                : "text-black-100 hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 hover:text-white"
                                         }   `}
                                         onClick={() => setSidebarOpen(false)}
                                     >
