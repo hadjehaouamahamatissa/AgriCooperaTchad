@@ -36,10 +36,12 @@ app.use("/api/auth", authRoutes);
 
 const userRoutes = require("./routes/users");
 app.use("/api/users", userRoutes);
-
-
 // const cooperativeRoutes = require("./routes/cooperativeRoutes");
 // app.use("/api/cooperatives", cooperativeRoutes);
+// app.use('/api/cooperatives', require('./routes/cooperativeRoutes'));
+// app.use('/api/products', require('./routes/productRoutes'));
+// app.use('/api/orders', require('./routes/orderRoutes'));
+// app.use('/api/credits', require('./routes/creditRoutes'));
 
 
 // Route de santé

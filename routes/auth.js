@@ -9,10 +9,12 @@ const {
   forgotPassword,
   resetPassword,
   getProfile,
-  updateProfile
+  updateProfile,
+  logout
 } = require('../controllers/authController');
-const auth = require("../middleware/auth");
-
+const { auth } = require("../middleware/auth");
+const { handleValidationErrors } = require("../middleware/validation");
+// const Cooperative = require("../controllers/cooperativeController");
 // Routes d'authentification
 router.post('/register', register);
 router.post('/login', login);
@@ -23,11 +25,9 @@ router.post('/forgot-password', forgotPassword); // Mot de passe oublié
 router.post('/reset-password', resetPassword);   // Réinitialisation mot de passe
 
 // Routes protégées
-router.get('/profile', auth, getProfile);        // Profil utilisateur
-router.put('/profile', auth, updateProfile);     // Modifier profil
-router.post('/logout', auth, (req, res) => {
-  res.json({ message: 'Deconnexion reussie' });
-});
+// Routes profile - DÉFINIES DIRECTEMENT
+router.get('/profile', auth, getProfile);
+router.put('/profile', auth, updateProfile);
 
 
 module.exports = router;
