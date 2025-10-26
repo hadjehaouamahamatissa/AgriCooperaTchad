@@ -4,13 +4,14 @@ const { body } = require("express-validator");
 const {
     getAllCooperatives,
     getCooperativeById,
-    createCooperative,
-    updateCooperative,
+    createCooperative, 
+    updateCooperative, 
     addMember,
-    getCooperativeStats
+    getCooperativeStats,
+    deleteCooperative
 } = require("../controllers/cooperativeController");
 const { auth, authorize } = require("../middleware/auth");
-const { handleValidationErros } = require("../middleware/validation");
+const { handleValidationErrors } = require("../middleware/validation");
 
 const router = express.Router();
 
@@ -25,13 +26,14 @@ const cooperativeValidation = [
 ];
 
 // Routes publiques
-router.get("/", getAllCooperatives);
 router.get("/:id", getCooperativeById);
+router.get("/stats/general", auth, authorize("admin"), getCooperativeStats);
 
 // Routes protegees
-router.post("/", auth, authorize("admin", "cooperative"), cooperativeValidation, handleValidationErros, createCooperative);
+router.get("/", getAllCooperatives);
+router.post("/", auth, authorize("admin", "cooperative"), cooperativeValidation, handleValidationErrors, createCooperative);
 router.put("/:id", auth, authorize("admin", "cooperative"), updateCooperative);
 router.post("/:id/members", auth, authorize("admin", "cooperative"), addMember);
-router.get("/stats/general", auth, authorize("admin"), getCooperativeStats);
+router.delete("/:id", auth, authorize("admin"), deleteCooperative);
 
 module.exports = router;

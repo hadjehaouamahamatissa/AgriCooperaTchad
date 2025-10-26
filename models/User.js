@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["admin", "cooperative", "producteur", "acheteur", "investisseur", "transporteur"],
+    enum: ["admin", "cooperative", "producteur", "acheteur", "investisseur", "transporteur", "membre"],
     default: "producteur"
   },
   cooperative: {
@@ -66,18 +66,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash du mot de passe avant sauvegarde
-// userSchema.pre("save", async function (next) {
-//   if(!this.isModified("password")) return next();
-//   this.password = await bcrypt.hash(this.password, 12);
-//   next();
-// });
 
-// // Verification du password
-// userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
-//   return await bcrypt.compare(candidatePassword, userPassword);
-  
-// };
 
 /// MIDDLEWARE CORRIGÉ POUR HACHER LE MOT DE PASSE
 userSchema.pre("save", async function (next) {
@@ -103,3 +92,4 @@ userSchema.methods.correctPassword = async function (candidatePassword, password
 
 
 module.exports = mongoose.model("User", userSchema);
+

@@ -1,6 +1,7 @@
 GET http://localhost:5000/api/auth/profile
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9-BQY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjM2NzY5MjgwZjJmYzBmMDRiODhlMiIsImlhdCI6MTc2MDc4MjE4NSwiZXhwIjoxNzYxMzg2OTg1fQ.VfQ_WyB_fQE259fOCVgXN_UBKizKAtBi2Z7FJ-IYYQE-BQY
 
+// Authentification
 ###
 POST http://localhost:5000/api/auth/register
 Content-Type: application/json
@@ -8,7 +9,7 @@ Content-Type: application/json
 {
   "nom": "Hawa",
   "prenom": "Mahajeer",
-  "email": "haymhti@gmail.com",
+  "email": "hayjmhti@gmail.com",
   "password": "09hK@dmy",
   "telephone": "62 80 85 51",
   "adresse": "Abeche",
@@ -31,8 +32,8 @@ POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "hayjmhti@gmail.com",
-  "password": "09hK@dmy"
+  "email": "hadjehaouamahamatissa@gmail.com",
+  "password": "Hdj808551"
   
 }
 
@@ -80,4 +81,54 @@ Content-Type: application/json
   "otp": "520372", // Code OTP reçu
   "newPassword": "newpassword123"
 }
+
+// Cooperatives
+###
+POST http://localhost:5000/api/cooperatives
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWUyNjY5YjY1ZTY2ODM5ZTA5YTQxMCIsImlhdCI6MTc2MDc4MzUyMywiZXhwIjoxNzYxMzg4MzIzfQ.4xZ6XHh4Uy2QnoMSrT1ko0WIW1F9oPs1ATdILX1S8RI
+
+{
+  "nom": "COOPAC",
+  "description": "Regroupe des producteurs de sesame",
+  "region": "Batha",
+  "ville": "N'Djamena",
+  "telephone": "+23562808551",
+  "dateCreation": "2023-09-24",
+  "email": "hayjmhti@gmail.com",
+  "president": "Hadje Haoua Mahamat Issa",
+  "membres": [{"nom": "Hawa", "role": "president", "dateAdhesion": "2024-04-13"}]
+}
+
+###
+GET http://localhost:5000/api/cooperatives/stats/general
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWUyNjY5YjY1ZTY2ODM5ZTA5YTQxMCIsImlhdCI6MTc2MDc4MzUyMywiZXhwIjoxNzYxMzg4MzIzfQ.4xZ6XHh4Uy2QnoMSrT1ko0WIW1F9oPs1ATdILX1S8RI
+
+###
+POST http://localhost:5000/api/cooperatives/68f37ac9e1a5e33449d87473/members
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWUyNjY5YjY1ZTY2ODM5ZTA5YTQxMCIsImlhdCI6MTc2MDc4MzUyMywiZXhwIjoxNzYxMzg4MzIzfQ.4xZ6XHh4Uy2QnoMSrT1ko0WIW1F9oPs1ATdILX1S8RI
+Content-Type: application/json
+
+{
+  "nom": "Hawa",
+  "prenom": "Mahajeer",
+  "email": "hayjmhti@gmail.com",
+  "telephone": "+23560001122",
+  "role": "membre",
+  "password": "09hK@dmy"
+}
+
+###
+DELETE http://localhost:5000/api/cooperatives/68f36dbb20e111fa7ab6ce01
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZWUyNjY5YjY1ZTY2ODM5ZTA5YTQxMCIsImlhdCI6MTc2MDc4MzUyMywiZXhwIjoxNzYxMzg4MzIzfQ.4xZ6XHh4Uy2QnoMSrT1ko0WIW1F9oPs1ATdILX1S8RI
+
+
+
+// Products
+###
+GET http://localhost:5000/api/products
+
+// Commandes 
+###
+GET http://localhost:5000/api/orders/my-orders (nécessite auth)
 

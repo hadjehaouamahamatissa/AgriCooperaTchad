@@ -45,6 +45,7 @@ const cooperativeSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
         },
+        prenom: String,
         role: {
             type: String,
             enum: ["president", "tresorier", "membre"],

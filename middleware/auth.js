@@ -12,7 +12,7 @@ const auth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.id).select('-password');
     
     if (!user) return res.status(401).json({ message: 'Token invalide. Utilisateur non trouvé.' });
 
@@ -37,4 +37,16 @@ const auth = async (req, res, next) => {
   }
 };
 
-module.exports = auth;
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `Accès refusé. Rôle ${req.user.role} non autorisé.`
+      });
+    }
+    next();
+  };
+};
+
+module.exports = { auth, authorize };

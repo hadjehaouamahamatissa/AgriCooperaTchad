@@ -1,23 +1,23 @@
-const Cooperative = require("../models/cooperative");
+const Cooperative = require("../models/Cooperative");
 const User = require("../models/User");
 const Product = require("../models/Product");
 
 // Recuperer toutes les coop
-exports.getAllCooperative = async (req, res) => {
+exports.getAllCooperatives = async (req, res) => { // "getAllCooperatives" au lieu de "getAllCooperative"
     try {
         const { region, activite, page = 1, limit = 10 } = req.query;
 
         let filter = { isActive: true };
 
-        if(region) filter.region = region;
-        if(activite) filter.activites = activite;
+        if (region) filter.region = region;
+        if (activite) filter.activites = activite;
 
         const cooperatives = await Cooperative.find(filter)
-           .populate("membres.user", "nom prenom email telephone")
-           .populate("produits")
-           .limit(limit * 1)
-           .skip((page - 1) * limit)
-           .sort({ createdAt: -1 });
+            .populate("membres.user", "nom prenom email telephone")
+            .populate("produits")
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .sort({ createdAt: -1 });
 
         const total = await Cooperative.countDocuments(filter);
 
@@ -26,7 +26,7 @@ exports.getAllCooperative = async (req, res) => {
             data: {
                 cooperatives,
                 totalPages: Math.ceil(total / limit),
-                currentPagr: page,
+                currentPage: page, // ✅ "currentPage" au lieu de "currentPagr"
                 total
             }
         });
@@ -40,14 +40,88 @@ exports.getAllCooperative = async (req, res) => {
     }
 };
 
-// Recuperer une cooperative par ID
+// ✅ CORRECTION : Fonction "updateCooperative" au lieu de "updateCoopérative"
+exports.updateCooperative = async (req, res) => { // "updateCooperative" sans accent
+    try {
+        const cooperative = await Cooperative.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!cooperative) {
+            return res.status(404).json({
+                success: false,
+                message: "Coopérative non trouvée"
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Coopérative mise à jour avec succès",
+            data: { cooperative }
+        });
+    } catch (error) {
+        console.error("Erreur mise à jour coopérative:", error);
+        res.status(500).json({
+            success: false,
+            message: "Erreur serveur lors de la mise à jour de la coopérative",
+            error: error.message
+        });
+    }
+};
+
+exports.getCooperativeStats = async (req, res) => {
+    try {
+        const stats = await Cooperative.aggregate([
+            { $match: { isActive: true } },
+            {
+                $group: {
+                    _id: null,
+                    totalCooperatives: { $sum: 1 },
+                    totalMembres: { $sum: "$statistiques.nombreMembres" },
+                    moyenneMembres: { $avg: "$statistiques.nombreMembres" },
+                    chiffreAffaireTotal: { $sum: "$statistiques.chiffreAffaireAnnuel" }
+                }
+            }
+        ]);
+
+        const statsParRegion = await Cooperative.aggregate([
+            { $match: { isActive: true } },
+            {
+                $group: {
+                    _id: "$region",
+                    nombreCooperatives: { $sum: 1 },
+                    nombreMembres: { $sum: "$statistiques.nombreMembres" } // ✅ "$sum" au lieu de "$num"
+                }
+            }
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                general: stats[0] || {},
+                parRegion: statsParRegion
+            }
+        });
+    } catch (error) {
+        console.error("Erreur statistiques:", error);
+        res.status(500).json({
+            success: false,
+            message: "Erreur serveur lors du calcul des statistiques",
+            error: error.message
+        });
+    }
+};
+
+// Les coop identr une cooperative par ID
 exports.getCooperativeById = async (req, res) => {
     try {
         const cooperative = await Cooperative.findById(req.params.id)
-          .populate("membres.user", "nom prenom email telephone role")
-          .populate("produits");
-        
-        if(!cooperative) {
+            .populate("membres.user", "nom prenom email telephone role")
+            .populate("produits");
+
+        if (!cooperative) {
             return res.status(404).json({
                 success: false,
                 message: "Cooperative non trouvée"
@@ -92,7 +166,7 @@ exports.createCooperative = async (req, res) => {
             message: "Coopérative créée avec succès",
             data: { cooperative }
         });
-    }  catch (error) {
+    } catch (error) {
         console.error("Erreur création coopérative:", error);
         res.status(500).json({
             success: false,
@@ -103,7 +177,7 @@ exports.createCooperative = async (req, res) => {
 };
 
 // Mettre a jour une cooperative
-exports.updateCoopérative = async (req, res) => {
+exports.updateCooperative = async (req, res) => {
     try {
         const cooperative = await Cooperative.findByIdAndUpdate(
             req.params.id,
@@ -111,7 +185,7 @@ exports.updateCoopérative = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        if(!cooperative) {
+        if (!cooperative) {
             return res.status(404).json({
                 success: false,
                 message: "Coopérative non trouvée"
@@ -136,18 +210,31 @@ exports.updateCoopérative = async (req, res) => {
 // Ajouter un membre a une cooperative
 exports.addMember = async (req, res) => {
     try {
-        const { userId, role } = req.body;
-        
-        const user = await User.findById(userId);
-        if(!user) {
-            return res.status(404).json({
-                success: false,
-                message: "Utilisateur non trouvé"
+        const { email, nom, prenom, role, telephone, password } = req.body;
+
+        let user = await User.findOne({ email });
+        if (!user) {
+            // Crée l'utilisateur s'il n'existe pas
+            user = await User.create({
+                nom,
+                prenom: "hawa",
+                email,
+                role: role || "membre",
+                telephone: "00000000",
+                password
             });
         }
 
+        // const user = await User.findById(userId);
+        // if (!user) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: "Utilisateur non trouvé"
+        //     });
+        // }
+
         const cooperative = await Cooperative.findById(req.params.id);
-        if(!cooperative) {
+        if (!cooperative) {
             return res.status(404).json({
                 success: false,
                 message: "Coopérative non trouvée"
@@ -155,11 +242,11 @@ exports.addMember = async (req, res) => {
         }
 
         // Verifier si l'utilisateur est deja membre
-        const isAlreadyMember = cooperative.membres.some(membre => 
-            membre.user.toString() === userId
+        const isAlreadyMember = cooperative.membres.some(membre =>
+            membre.user.toString() === user._id.toString()
         );
 
-        if(isAlreadyMember) {
+        if (isAlreadyMember) {
             return res.status(400).json({
                 success: false,
                 message: "Cet utilisateur est déja membre de la coopérative"
@@ -167,7 +254,7 @@ exports.addMember = async (req, res) => {
         }
 
         cooperative.membres.push({
-            user: userId,
+            user: user._id,
             role: role || "membre"
         });
 
@@ -201,10 +288,10 @@ exports.getCooperativeStats = async (req, res) => {
             {
                 $group: {
                     _id: null,
-                    totalCooperatives: { $num: 1 },
-                    totalMembres: { $sum: "$statistiques.nombreMembre"},
-                    moyenneMembres: { $avg: "$statistique.nombresMembres"},
-                    chiffreAffaireTotal: { $num: "$statistiques.chiffreAffaireAnnuel"}
+                    totalCooperatives: { $sum: 1 },
+                    totalMembres: { $sum: "$statistiques.nombreMembre" },
+                    moyenneMembres: { $avg: "$statistique.nombresMembres" },
+                    chiffreAffaireTotal: { $sum: "$statistiques.chiffreAffaireAnnuel" }
                 }
             }
         ]);
@@ -215,7 +302,7 @@ exports.getCooperativeStats = async (req, res) => {
                 $group: {
                     _id: "$region",
                     nombreCooperatives: { $sum: 1 },
-                    nombreMembres: { $num: "$statistiques.nombreMembres" }
+                    nombreMembres: { $sum: "$statistiques.nombreMembres" }
                 }
             }
         ]);
@@ -227,7 +314,7 @@ exports.getCooperativeStats = async (req, res) => {
                 parRegion: statsParRegion
             }
         });
-    }   catch (error) {
+    } catch (error) {
         console.error("Erreur statistiques:", error);
         res.status(500).json({
             success: false,
@@ -237,25 +324,22 @@ exports.getCooperativeStats = async (req, res) => {
     }
 };
 
+exports.deleteCooperative = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-// const Cooperative = require('../models/cooperative');
+        const cooperative = await Cooperative.findById(id);
+        if (!cooperative) {
+            return res.status(404).json({ message: "Coopérative non trouvée." });
+        }
 
-// exports.getAllCooperatives = async (req, res) => {
-//     try {
-//         const cooperatives = await Cooperative.find().populate('membres', 'nom prenom');
-//         res.json(cooperatives);
-//     } catch (err) {
-//         res.status(500).json({ msg: 'Erreur serveur' });
-//     }
-// };
+        await Cooperative.findByIdAndDelete(id);
 
-// exports.createCooperative = async (req, res) => {
-//     const { nom, localisation, description } = req.body;
-//     try {
-//         const coop = new Cooperative({ nom, localisation, description });
-//         await coop.save();
-//         res.json(coop);
-//     } catch (err) {
-//         res.status(500).json({ msg: 'Erreur serveur' });
-//     }
-// };
+        res.status(200).json({ message: "Coopérative supprimée avec succès." });
+    } catch (error) {
+        console.error("Erreur lors de la suppression :", error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+};
+
+

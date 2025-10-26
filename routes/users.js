@@ -1,4 +1,3 @@
-// backend/routes/users.js - TOUT DANS UN SEUL FICHIER
 const express = require("express");
 const router = express.Router();
 const { auth } = require("../middleware/auth");
