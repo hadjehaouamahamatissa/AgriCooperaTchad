@@ -12,15 +12,15 @@ const { handleValidationErrors } = require("../middleware/validation");
 
 const router = express.Router();
 
-// validation rules
+// CORRECTION: validation rules corrigées pour correspondre aux données du frontend
 const orderValidation = [
-    body("produits").isArray({ min: 1}).withMessage("Au moins un produit est requis"),
-    body("produits.*.produit").isMongoId().withMessage("ID produit invalide"),
-    body("produit.*.quantite").isIn({ min: 1 }).withMessage("Quantite invalide"),
-    body("adresseLivraison.nomComplet").notEmpty().withMessage("Nom complet requis"),
-    body("adresseLivraison.telephone").notEmpty().withMessage("Téléphone requis"),
-    body("adresseLivraison.ville").notEmpty().withMessage("Ville requise"),
-    body("paiement.methode").isIn(["mobile_money", "carte_credit", "espece", "virement", "credit_cooperative"]).withMessage("Methode de paiement invalide")
+    body("items").isArray({ min: 1}).withMessage("Au moins un produit est requis"),
+    body("items.*.productId").isMongoId().withMessage("ID produit invalide"),
+    body("items.*.quantity").isInt({ min: 1 }).withMessage("Quantité invalide"),
+    body("shippingAddress.fullName").notEmpty().withMessage("Nom complet requis"),
+    body("shippingAddress.phone").notEmpty().withMessage("Téléphone requis"),
+    body("shippingAddress.city").notEmpty().withMessage("Ville requise"),
+    body("payment.method").isIn(["mobile_money", "stripe", "cash", "transfer", "cooperative_credit"]).withMessage("Méthode de paiement invalide")
 ];
 
 // Routes
