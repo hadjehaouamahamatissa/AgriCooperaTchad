@@ -39,7 +39,7 @@ class ApiService {
   }
 
   // Auth methods
-    async login(credentials) {
+  async login(credentials) {
     const response = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -121,16 +121,29 @@ class ApiService {
     const apiPayload = {
       items: orderData.items.map(item => ({
         productId: item.productId,
-        productName: item.productName,
+        productName: item.productName || "Produit",
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice
       })),
       totalAmount: orderData.totalAmount,
-      shippingAddress: orderData.shippingAddress,
-      payment: orderData.payment, 
+      shippingAddress: {
+        fullName: orderData.shippingAddress.fullName || "Client",
+        phone: orderData.shippingAddress.phone || "+235",
+        region: orderData.shippingAddress.region || "N'Djamena",
+        city: orderData.shippingAddress.city || "N'Djamena",
+        neighborhood: orderData.shippingAddress.neighborhood || "",
+        detailedAddress: orderData.shippingAddress.detailedAddress || "",
+        instructions: orderData.shippingAddress.instructions || ""
+      },
+      payment: {
+        method: orderData.payment.method,
+        status: orderData.payment.status || "pending",
+        transactionId: orderData.payment.transactionId || "",
+        paymentDate: orderData.payment.paymentDate || null
+      },
       notes: orderData.notes || "",
-      desiredDeliveryDate: orderData.desiredDeliveryDate
+      desiredDeliveryDate: orderData.desiredDeliveryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
     };
 
     console.log("📤 ApiService.createOrder - Payload final:", apiPayload);
@@ -139,6 +152,7 @@ class ApiService {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(apiPayload),
     });
