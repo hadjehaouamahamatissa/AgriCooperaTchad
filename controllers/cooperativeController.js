@@ -3,7 +3,7 @@ const User = require("../models/User");
 const Product = require("../models/Product");
 
 // Recuperer toutes les coop
-exports.getAllCooperatives = async (req, res) => { // "getAllCooperatives" au lieu de "getAllCooperative"
+exports.getAllCooperatives = async (req, res) => { 
     try {
         const { region, activite, page = 1, limit = 10 } = req.query;
 
@@ -26,7 +26,7 @@ exports.getAllCooperatives = async (req, res) => { // "getAllCooperatives" au li
             data: {
                 cooperatives,
                 totalPages: Math.ceil(total / limit),
-                currentPage: page, // ✅ "currentPage" au lieu de "currentPagr"
+                currentPage: page, 
                 total
             }
         });
@@ -40,8 +40,8 @@ exports.getAllCooperatives = async (req, res) => { // "getAllCooperatives" au li
     }
 };
 
-// ✅ CORRECTION : Fonction "updateCooperative" au lieu de "updateCoopérative"
-exports.updateCooperative = async (req, res) => { // "updateCooperative" sans accent
+// Mise à jour d'une cooperative
+exports.updateCooperative = async (req, res) => { 
     try {
         const cooperative = await Cooperative.findByIdAndUpdate(
             req.params.id,
@@ -92,7 +92,7 @@ exports.getCooperativeStats = async (req, res) => {
                 $group: {
                     _id: "$region",
                     nombreCooperatives: { $sum: 1 },
-                    nombreMembres: { $sum: "$statistiques.nombreMembres" } // ✅ "$sum" au lieu de "$num"
+                    nombreMembres: { $sum: "$statistiques.nombreMembres" }
                 }
             }
         ]);
