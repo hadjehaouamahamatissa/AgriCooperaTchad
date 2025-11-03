@@ -1,76 +1,76 @@
-import React, { useState } from 'react'
-import { CreditCard, Smartphone, DollarSign, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react'
+import React, { useState } from 'react';
+import { CreditCard, DollarSign, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
+// Configuration Stripe
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || 'pk_test_...');
+
+// --- Composant pour chaque méthode de paiement ---
 const PaymentMethod = ({ method, isSelected, onSelect }) => {
   const getMethodIcon = (type) => {
     switch (type) {
-      case 'moov': return '/api/placeholder/40/40'
-      case 'airtel': return '/api/placeholder/40/40'
-      case 'card': return <CreditCard className="h-8 w-8" />
-      default: return <DollarSign className="h-8 w-8" />
+      case 'moov':
+      case 'airtel':
+        return 'mobile_money';
+      case 'card':
+        return 'credit_card';
+      default:
+        return 'cash';
     }
-  }
+  };
+
+  const icon = getMethodIcon(method.type);
 
   return (
     <div
       onClick={() => onSelect(method)}
       className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50' 
-          : 'border-gray-200 hover:border-gray-300'
+        isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
       }`}
     >
       <div className="flex items-center space-x-4">
         <div className="flex-shrink-0">
-          {typeof getMethodIcon(method.type) === 'string' ? (
-            <img 
-              src={getMethodIcon(method.type)} 
-              alt={method.name}
-              className="h-10 w-10 rounded"
-            />
-          ) : (
+          {typeof icon === 'string' ? (
             <div className="p-2 bg-gray-100 rounded-lg">
-              {getMethodIcon(method.type)}
+              <CreditCard className="h-6 w-6 text-gray-600" />
             </div>
+          ) : (
+            <div className="p-2 bg-gray-100 rounded-lg">{icon}</div>
           )}
         </div>
         <div className="flex-1">
           <h3 className="font-medium text-gray-900">{method.name}</h3>
           <p className="text-sm text-gray-600">{method.description}</p>
-          {method.fees && (
-            <p className="text-xs text-gray-500 mt-1">Frais: {method.fees}</p>
-          )}
+          {method.fees && <p className="text-xs text-gray-500 mt-1">Frais: {method.fees}</p>}
         </div>
         <div className="flex-shrink-0">
-          <div className={`w-4 h-4 rounded-full border-2 ${
-            isSelected 
-              ? 'border-blue-500 bg-blue-500' 
-              : 'border-gray-300'
-          }`}>
-            {isSelected && (
-              <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>
-            )}
+          <div
+            className={`w-4 h-4 rounded-full border-2 ${
+              isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+            }`}
+          >
+            {isSelected && <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5"></div>}
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
+// --- Formulaire Moov Money ---
 const MoovMoneyForm = ({ onSubmit, onCancel }) => {
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    
-    // Simuler le processus de paiement
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
     setTimeout(() => {
-      onSubmit({ phoneNumber, method: 'moov' })
-      setLoading(false)
-    }, 2000)
-  }
+      onSubmit({ phoneNumber, method: 'mobile_money' });
+      setLoading(false);
+    }, 2000);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,22 +118,22 @@ const MoovMoneyForm = ({ onSubmit, onCancel }) => {
         </button>
       </div>
     </form>
-  )
-}
+  );
+};
 
+// --- Formulaire Airtel Money ---
 const AirtelMoneyForm = ({ onSubmit, onCancel }) => {
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
     setTimeout(() => {
-      onSubmit({ phoneNumber, method: 'airtel' })
-      setLoading(false)
-    }, 2000)
-  }
+      onSubmit({ phoneNumber, method: 'mobile_money' });
+      setLoading(false);
+    }, 2000);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -178,27 +178,150 @@ const AirtelMoneyForm = ({ onSubmit, onCancel }) => {
         </button>
       </div>
     </form>
-  )
-}
+  );
+};
 
+// --- Formulaire Stripe Card Payment ---
+const StripeCardForm = ({ onSubmit, onCancel, amount }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const cardElement = elements.getElement(CardElement);
+
+    try {
+      // Créer un token de paiement
+      const { error, token } = await stripe.createToken(cardElement);
+
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+
+      // Simuler un appel API pour traiter le paiement
+      // En production, vous devriez envoyer le token à votre backend
+      const paymentResult = await simulateStripePayment(token, amount);
+      
+      if (paymentResult.success) {
+        onSubmit({
+          method: 'credit_card',
+          stripeToken: token.id,
+          cardLast4: token.card.last4,
+          cardBrand: token.card.brand
+        });
+      } else {
+        setError(paymentResult.error);
+      }
+    } catch (err) {
+      setError('Une erreur est survenue lors du traitement du paiement');
+    }
+
+    setLoading(false);
+  };
+
+  // Simulation du traitement Stripe (à remplacer par votre API backend)
+  const simulateStripePayment = async (token, amount) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Simuler un succès dans 90% des cas
+        const success = Math.random() > 0.1;
+        resolve({
+          success,
+          error: success ? null : 'Paiement refusé par votre banque'
+        });
+      }, 2000);
+    });
+  };
+
+  const cardElementOptions = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#424770',
+        '::placeholder': {
+          color: '#aab7c4',
+        },
+      },
+      invalid: {
+        color: '#9e2146',
+      },
+    },
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Informations de carte bancaire
+        </label>
+        <div className="p-3 border border-gray-300 rounded-md">
+          <CardElement options={cardElementOptions} />
+        </div>
+        {error && (
+          <p className="text-red-600 text-sm mt-2">{error}</p>
+        )}
+      </div>
+
+      <div className="bg-green-50 p-4 rounded-lg">
+        <div className="flex items-center space-x-2 text-sm text-green-600">
+          <CheckCircle className="h-4 w-4" />
+          <span>Paiement sécurisé par Stripe</span>
+        </div>
+        <p className="text-xs text-green-700 mt-1">
+          Vos informations de carte sont cryptées et sécurisées
+        </p>
+      </div>
+
+      <div className="flex space-x-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+        >
+          Annuler
+        </button>
+        <button
+          type="submit"
+          disabled={!stripe || loading}
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? 'Traitement...' : `Payer ${amount?.toLocaleString()} XAF`}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// --- Formulaire Carte Bancaire (Legacy) ---
 const CardPaymentForm = ({ onSubmit, onCancel }) => {
   const [cardData, setCardData] = useState({
     number: '',
     expiry: '',
     cvv: '',
     name: ''
-  })
-  const [loading, setLoading] = useState(false)
+  });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
     setTimeout(() => {
-      onSubmit({ ...cardData, method: 'card' })
-      setLoading(false)
-    }, 3000)
-  }
+      onSubmit({ ...cardData, method: 'credit_card' });
+      setLoading(false);
+    }, 3000);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -209,7 +332,7 @@ const CardPaymentForm = ({ onSubmit, onCancel }) => {
         <input
           type="text"
           value={cardData.name}
-          onChange={(e) => setCardData({...cardData, name: e.target.value})}
+          onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
           placeholder="Nom complet"
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
@@ -223,7 +346,7 @@ const CardPaymentForm = ({ onSubmit, onCancel }) => {
         <input
           type="text"
           value={cardData.number}
-          onChange={(e) => setCardData({...cardData, number: e.target.value})}
+          onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
           placeholder="1234 5678 9012 3456"
           maxLength="19"
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -239,7 +362,7 @@ const CardPaymentForm = ({ onSubmit, onCancel }) => {
           <input
             type="text"
             value={cardData.expiry}
-            onChange={(e) => setCardData({...cardData, expiry: e.target.value})}
+            onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
             placeholder="MM/AA"
             maxLength="5"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -253,7 +376,7 @@ const CardPaymentForm = ({ onSubmit, onCancel }) => {
           <input
             type="text"
             value={cardData.cvv}
-            onChange={(e) => setCardData({...cardData, cvv: e.target.value})}
+            onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
             placeholder="123"
             maxLength="4"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -286,95 +409,60 @@ const CardPaymentForm = ({ onSubmit, onCancel }) => {
         </button>
       </div>
     </form>
-  )
-}
+  );
+};
 
+// --- Composant principal Payment ---
 export default function Payment({ order, onSuccess, onCancel }) {
-  const [selectedMethod, setSelectedMethod] = useState(null)
-  const [currentStep, setCurrentStep] = useState("select") // select, form, success
-  // const [order, setOrder] = useState({ amount: 0 }) // 👈 montant vide au départ
-  const [paymentResult, setPaymentResult] = useState(null)
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [currentStep, setCurrentStep] = useState('select'); // select, form, success
+  const [paymentResult, setPaymentResult] = useState(null);
 
   const paymentMethods = [
-    {
-      id: 'moov',
-      type: 'moov',
-      name: 'Moov Money',
-      description: 'Paiement mobile via Moov Money',
-      fees: '1% du montant (min. 100 XAF)',
-      available: true
-    },
-    {
-      id: 'airtel',
-      type: 'airtel',
-      name: 'Airtel Money',
-      description: 'Paiement mobile via Airtel Money',
-      fees: '1.5% du montant (min. 150 XAF)',
-      available: true
-    },
-    {
-      id: 'card',
-      type: 'card',
-      name: 'Carte Bancaire',
-      description: 'Visa, Mastercard acceptées',
-      fees: '2.5% du montant',
-      available: true
-    }
-  ]
+    { id: 'moov', type: 'moov', name: 'Moov Money', description: 'Paiement mobile via Moov Money', fees: '1% du montant (min. 100 XAF)' },
+    { id: 'airtel', type: 'airtel', name: 'Airtel Money', description: 'Paiement mobile via Airtel Money', fees: '1.5% du montant (min. 150 XAF)' },
+    { id: 'stripe', type: 'card', name: 'Carte Bancaire (Stripe)', description: 'Visa, Mastercard via Stripe', fees: '2.9% + 30 XAF' },
+    { id: 'card', type: 'card', name: 'Carte Bancaire', description: 'Visa, Mastercard acceptées', fees: '2.5% du montant' },
+  ];
 
-  const handleMethodSelect = (method) => {
-    setSelectedMethod(method)
-  }
+  const handleMethodSelect = (method) => setSelectedMethod(method);
 
   const handlePaymentSubmit = (paymentData) => {
-    // Simuler le résultat du paiement
-    const success = Math.random() > 0.1 // 90% de chance de succès
-    
-    setPaymentResult({
+    const success = Math.random() > 0.1;
+    const result = {
       success,
       transactionId: success ? `TXN${Date.now()}` : null,
-      message: success 
-        ? 'Paiement effectué avec succès !' 
-        : 'Échec du paiement. Veuillez réessayer.',
-      paymentData
-    })
-    
-    setCurrentStep('result')
-    
+      message: success ? 'Paiement effectué avec succès !' : 'Échec du paiement. Veuillez réessayer.',
+      paymentData,
+      selectedMethod
+    };
+    setPaymentResult(result);
+    setCurrentStep('success');
+
     if (success && onSuccess) {
-      setTimeout(() => onSuccess(paymentResult), 2000)
+      setTimeout(() => onSuccess(result, selectedMethod), 1000);
     }
-  }
+  };
 
-  const handleContinue = () => {
-    if (selectedMethod) {
-      setCurrentStep('form')
-    }
-  }
-
+  const handleContinue = () => selectedMethod && setCurrentStep('form');
   const handleBack = () => {
-    if (currentStep === 'form') {
-      setCurrentStep('select')
-    } else if (currentStep === 'success') {
-      setCurrentStep('select')
-      setPaymentResult(null)
+    if (currentStep === 'form') setCurrentStep('select');
+    else if (currentStep === 'success') {
+      setCurrentStep('select');
+      setPaymentResult(null);
     }
-  }
+  };
 
   const calculateTotal = () => {
-    if (!order || !selectedMethod) return order?.amount || 10
-    
-    const baseAmount = order.amount || 0
-    const feePercentage = {
-      'moov': 0.01,
-      'airtel': 0.015,
-      'card': 0.025
-    }[selectedMethod.id] || 0
-    
-    const fee = Math.max(baseAmount * feePercentage, selectedMethod.id === 'moov' ? 100 : selectedMethod.id === 'airtel' ? 150 : 0)
-    return baseAmount + fee
-  }
+    if (!order || !selectedMethod) return order?.amount || 0;
+    const baseAmount = order.amount || 0;
+    const feesPercent = { moov: 0.01, airtel: 0.015, stripe: 0.029, card: 0.025 };
+    const minFees = { moov: 100, airtel: 150, stripe: 30, card: 0 };
+    const fee = Math.max(baseAmount * (feesPercent[selectedMethod.id] || 0), minFees[selectedMethod.id] || 0);
+    return baseAmount + fee;
+  };
 
+  // --- Rendu ---
   if (currentStep === 'success') {
     return (
       <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
@@ -398,11 +486,10 @@ export default function Payment({ order, onSuccess, onCancel }) {
               <p className="text-gray-600 mb-4">{paymentResult.message}</p>
             </>
           )}
-          
           <div className="space-y-3">
             {paymentResult?.success ? (
               <button
-                onClick={() => onSuccess && onSuccess(paymentResult)}
+                onClick={() => onSuccess && onSuccess(paymentResult, selectedMethod)}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
                 Continuer
@@ -415,7 +502,6 @@ export default function Payment({ order, onSuccess, onCancel }) {
                 Réessayer
               </button>
             )}
-            
             <button
               onClick={onCancel}
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
@@ -425,19 +511,15 @@ export default function Payment({ order, onSuccess, onCancel }) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
           {currentStep === 'form' && (
-            <button
-              onClick={handleBack}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
+            <button onClick={handleBack} className="p-2 hover:bg-gray-100 rounded-lg">
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
@@ -445,15 +527,11 @@ export default function Payment({ order, onSuccess, onCancel }) {
             {currentStep === 'select' ? 'Choisir un mode de paiement' : 'Finaliser le paiement'}
           </h2>
         </div>
-        <button
-          onClick={onCancel}
-          className="text-gray-400 hover:text-gray-600"
-        >
+        <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
           ✕
         </button>
       </div>
 
-      {/* Order Summary */}
       {order && (
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
           <h3 className="font-medium text-gray-900 mb-2">Résumé de la commande</h3>
@@ -480,7 +558,6 @@ export default function Payment({ order, onSuccess, onCancel }) {
 
       {currentStep === 'select' && (
         <>
-          {/* Payment Methods */}
           <div className="space-y-4 mb-6">
             {paymentMethods.map((method) => (
               <PaymentMethod
@@ -491,8 +568,6 @@ export default function Payment({ order, onSuccess, onCancel }) {
               />
             ))}
           </div>
-
-          {/* Continue Button */}
           <button
             onClick={handleContinue}
             disabled={!selectedMethod}
@@ -505,26 +580,20 @@ export default function Payment({ order, onSuccess, onCancel }) {
 
       {currentStep === 'form' && selectedMethod && (
         <div>
-          {selectedMethod.id === 'moov' && (
-            <MoovMoneyForm
-              onSubmit={handlePaymentSubmit}
-              onCancel={handleBack}
-            />
+          {selectedMethod.id === 'moov' && <MoovMoneyForm onSubmit={handlePaymentSubmit} onCancel={handleBack} />}
+          {selectedMethod.id === 'airtel' && <AirtelMoneyForm onSubmit={handlePaymentSubmit} onCancel={handleBack} />}
+          {selectedMethod.id === 'stripe' && (
+            <Elements stripe={stripePromise}>
+              <StripeCardForm 
+                onSubmit={handlePaymentSubmit} 
+                onCancel={handleBack} 
+                amount={calculateTotal()}
+              />
+            </Elements>
           )}
-          {selectedMethod.id === 'airtel' && (
-            <AirtelMoneyForm
-              onSubmit={handlePaymentSubmit}
-              onCancel={handleBack}
-            />
-          )}
-          {selectedMethod.id === 'card' && (
-            <CardPaymentForm
-              onSubmit={handlePaymentSubmit}
-              onCancel={handleBack}
-            />
-          )}
+          {selectedMethod.id === 'card' && <CardPaymentForm onSubmit={handlePaymentSubmit} onCancel={handleBack} />}
         </div>
       )}
     </div>
-  )
+  );
 }
