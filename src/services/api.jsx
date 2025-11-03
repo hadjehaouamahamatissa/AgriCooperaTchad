@@ -1,183 +1,197 @@
-// src/services/apiService.js
 
-import axios from 'axios';
-
-// Base URL from .env or default
-const API_BASE_URL = 'http://localhost:5000/api';
-
-// Create an Axios instance
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Request interceptor to attach token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Optional: Response interceptor for global error handling
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // console.error('❌ API Error:', error?.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
+const API_URL = 'http://localhost:5000/api';
 
 class ApiService {
-  /**
-   * Save or remove token in localStorage.
-   */
-  setToken(token) {
-    if (token) {
-      localStorage.setItem('authToken', token);
-    } else {
-      localStorage.removeItem('authToken');
-    }
+  constructor() {
+    this.baseURL = API_URL;
   }
-
-  /**
-   * Return current token
-   */
-  get token() {
-    return localStorage.getItem('authToken');
-  }
-
- 
-  isAuthenticated() {
-    return !!this.token;
-  }
-
-
-  buildQuery(params) {
-    const query = new URLSearchParams(params).toString();
-    return query ? `?${query}` : '';
-  }
-
 
   async request(endpoint, options = {}) {
-    const {
-      method = 'GET',
-      body,
-      params,
-      headers = {},
-    } = options;
+    const url = `${this.baseURL}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
 
     try {
-      const response = await axiosInstance.request({
-        url: endpoint,
-        method,
-        headers,
-        data: body,
-        params,
-      });
+      console.log(`🌐 API Request: ${config.method || 'GET'} ${url}`);
+      if (config.body) {
+        console.log('📤 Request Body:', JSON.parse(config.body));
+      }
 
-      return response.data;
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      console.log(`📡 API Response (${response.status}):`, data);
+
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return data;
     } catch (error) {
-      const message = error?.response?.data?.message || error.message;
-      throw new Error(message);
+      console.error(`❌ API Error for ${endpoint}:`, error);
+      throw error;
     }
   }
 
-  // === AUTH METHODS ===
+  // Auth methods
+    async login(credentials) {
+    const response = await this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+
+    // 🔥 CORRECTION: Stocker le token et les données utilisateur après une connexion réussie
+    if (response.success && response.data && !response.requiresOTP) {
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        console.log('✅ Token stocké:', response.data.token);
+      }
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        console.log('✅ User stocké:', response.data.user);
+      }
+    }
+
+    return response;
+  }
 
   async register(userData) {
     return this.request('/auth/register', {
       method: 'POST',
-      body: userData,
+      body: JSON.stringify(userData),
     });
   }
 
-  async login(credentials) {
-    console.log('📨 login appelé avec:', credentials);
+  // Products methods
+  async getProducts(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/products${queryString ? `?${queryString}` : ''}`;
+    return this.request(endpoint);
+  }
 
-    const data = await this.request('/auth/login', {
+  async getProductById(id) {
+    return this.request(`/products/${id}`);
+  }
+
+  async createProduct(productData) {
+    const token = localStorage.getItem('token');
+    return this.request('/products', {
       method: 'POST',
-      body: credentials,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productData),
     });
+  }
 
-    if (data?.data?.token) {
-      this.setToken(data.data.token);
+  async updateProduct(id, productData) {
+    const token = localStorage.getItem('token');
+    return this.request(`/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productData),
+    });
+  }
+
+  // Orders methods 
+  async createOrder(orderData, token) {
+    console.log("🛒 ApiService.createOrder - Données reçues:", orderData);
+
+    // Validation des données requises
+    if (!orderData.items || orderData.items.length === 0) {
+      throw new Error("Aucun produit dans la commande");
     }
 
-    return data;
-  }
+    if (!orderData.shippingAddress) {
+      throw new Error("Adresse de livraison requise");
+    }
 
-  async verifyEmail(email, code) {
-    return this.request('/auth/verify-email', {
+    if (!orderData.payment || !orderData.payment.method) {
+      throw new Error("Méthode de paiement requise");
+    }
+
+    // Structure des données pour l'API backend
+    const apiPayload = {
+      items: orderData.items.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice
+      })),
+      totalAmount: orderData.totalAmount,
+      shippingAddress: orderData.shippingAddress,
+      payment: orderData.payment, 
+      notes: orderData.notes || "",
+      desiredDeliveryDate: orderData.desiredDeliveryDate
+    };
+
+    console.log("📤 ApiService.createOrder - Payload final:", apiPayload);
+
+    return this.request('/orders', {
       method: 'POST',
-      body: { email, code },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(apiPayload),
     });
   }
 
-  async verifyOTP(email, otpCode) {
-    return this.request('/auth/verify-otp', {
-      method: 'POST',
-      body: { email, otpCode },
+  async getUserOrders(params = {}) {
+    const token = localStorage.getItem('token');
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/orders/user${queryString ? `?${queryString}` : ''}`;
+    return this.request(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   }
 
-  async resendOTP(email) {
-    return this.request('/auth/resend-otp', {
-      method: 'POST',
-      body: { email },
+  async getCooperativeOrders(params = {}) {
+    const token = localStorage.getItem('token');
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/orders/cooperative${queryString ? `?${queryString}` : ''}`;
+    return this.request(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   }
 
-  async forgotPassword(email) {
-    return this.request('/auth/forgot-password', {
-      method: 'POST',
-      body: { email },
-    });
-  }
-
-  async resetPassword(email, code, newPassword) {
-    return this.request('/auth/reset-password', {
-      method: 'POST',
-      body: { email, code, newPassword },
-    });
-  }
-
-  async getProfile() {
-    return this.request('/auth/profile');
-  }
-
-  async updateProfile(profileData) {
-    return this.request('/auth/profile', {
+  async updateOrderStatus(orderId, status) {
+    const token = localStorage.getItem('token');
+    return this.request(`/orders/${orderId}/status`, {
       method: 'PUT',
-      body: profileData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
     });
   }
 
-  logout() {
-    this.setToken(null);
+  async cancelOrder(orderId) {
+    const token = localStorage.getItem('token');
+    return this.request(`/orders/${orderId}/cancel`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
   }
 
-
-  // === COOPERATIVE METHODS ===
-
+  // Cooperatives methods
   async getCooperatives(params = {}) {
-    // Les paramètres attendus par votre contrôleur
-    const { region, activite, page = 1, limit = 10 } = params;
-    const queryParams = {};
-
-    if (region) queryParams.region = region;
-    if (activite) queryParams.activite = activite;
-    if (page) queryParams.page = page;
-    if (limit) queryParams.limit = limit;
-
-    const query = this.buildQuery(queryParams);
-    return this.request(`/cooperatives${query}`);
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/cooperatives${queryString ? `?${queryString}` : ''}`;
+    return this.request(endpoint);
   }
 
   async getCooperativeById(id) {
@@ -185,50 +199,96 @@ class ApiService {
   }
 
   async createCooperative(cooperativeData) {
+    const token = localStorage.getItem('token');
     return this.request('/cooperatives', {
       method: 'POST',
-      body: cooperativeData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(cooperativeData),
     });
   }
 
-  async updateCooperative(id, cooperativeData) {
-    return this.request(`/cooperatives/${id}`, {
+  // Users methods
+  async getUserProfile() {
+    const token = localStorage.getItem('token');
+    return this.request('/users/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async updateUserProfile(userData) {
+    const token = localStorage.getItem('token');
+    return this.request('/users/profile', {
       method: 'PUT',
-      body: cooperativeData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(userData),
     });
   }
 
-  async deleteCooperative(id) {
-    return this.request(`/cooperatives/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Méthodes spécifiques pour les membres
-  // === MEMBER METHODS ===
-
-  async addMember(cooperativeId, memberData) {
-    return this.request(`/cooperatives/${cooperativeId}/members`, {
+  // Crédits
+  async requestCredit(creditData) {
+    const token = localStorage.getItem('token');
+    return this.request('/credits/request', {
       method: 'POST',
-      body: memberData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(creditData),
     });
   }
 
-  async getCooperativeMembers(cooperativeId) {
-    return this.request(`/cooperatives/${cooperativeId}/members`);
-  }
-
-  async removeMember(cooperativeId, memberId) {
-    return this.request(`/cooperatives/${cooperativeId}/members/${memberId}`, {
-      method: 'DELETE',
+  async getUserCredits(params = {}) {
+    const token = localStorage.getItem('token');
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/credits/user${queryString ? `?${queryString}` : ''}`;
+    return this.request(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   }
 
-  // Méthode pour les statistiques
-  async getCooperativeStats() {
-    return this.request('/cooperatives/stats');
+  async getCooperativeCredits(params = {}) {
+    const token = localStorage.getItem('token');
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = `/credits/cooperative${queryString ? `?${queryString}` : ''}`;
+    return this.request(endpoint, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
   }
+
+  async analyzeCredit(creditId, data) {
+    const token = localStorage.getItem('token');
+    return this.request(`/credits/analyze/${creditId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async payInstallment(creditId, echeanceId) {
+    const token = localStorage.getItem('token');
+    return this.request(`/credits/pay/${creditId}/${echeanceId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+
+
 }
 
-
+// Export singleton instance
 export const apiService = new ApiService();
+export default apiService;
