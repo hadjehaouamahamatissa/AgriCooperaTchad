@@ -1,125 +1,141 @@
-import { useState } from 'react';
-import { 
-  Plus, 
-  CreditCard, 
-  Building2, 
-  Package,
-  Calendar,
-  DollarSign,
+import { useState, useEffect } from 'react';
+import { apiService } from "../services/api";
+import {
+  Plus,
+  Building2,
   FileText,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  DollarSign,
+  Loader,
+  UploadCloud,
+  Trash2,
+  DownloadCloud
 } from 'lucide-react';
 
-// Données simulées des demandes de crédit
-const initialCreditRequests = [
-  {
-    id: 1,
-    cooperative: 'Coopérative de Sarh',
-    amount: 5000000,
-    purpose: 'Achat de matériel agricole (tracteur)',
-    lender: 'Banque Commerciale du Tchad',
-    status: 'En cours',
-    requestDate: '2024-01-15',
-    interestRate: 12,
-    duration: 24
-  },
-  {
-    id: 2,
-    cooperative: 'Coopérative de Moundou',
-    amount: 2500000,
-    purpose: 'Achat d\'intrants (semences et engrais)',
-    lender: 'Microfinance ACEP',
-    status: 'Approuvé',
-    requestDate: '2024-02-01',
-    interestRate: 8,
-    duration: 12
-  },
-  {
-    id: 3,
-    cooperative: 'Coopérative de Bongor',
-    amount: 1800000,
-    purpose: 'Construction d\'un entrepôt de stockage',
-    lender: 'Fonds de Développement Agricole',
-    status: 'Rejeté',
-    requestDate: '2024-01-20',
-    interestRate: 15,
-    duration: 36
-  }
-];
-
-const lenders = [
-  { id: 'bct', name: 'Banque Commerciale du Tchad', type: 'Banque', rate: '10-15%' },
-  { id: 'acep', name: 'Microfinance ACEP', type: 'Microfinance', rate: '8-12%' },
-  { id: 'fda', name: 'Fonds de Développement Agricole', type: 'Institution publique', rate: '5-10%' },
-  { id: 'ecobank', name: 'Ecobank Tchad', type: 'Banque', rate: '12-18%' },
-  { id: 'express', name: 'Express Union', type: 'Microfinance', rate: '9-14%' }
-];
-
 export default function Finance() {
-  const [creditRequests, setCreditRequests] = useState(initialCreditRequests);
+  const [creditRequests, setCreditRequests] = useState([]);
+  const [lenders, setLenders] = useState([]);
+  const [stats, setStats] = useState({
+    totalRequests: 0,
+    approvedRequests: 0,
+    pendingRequests: 0,
+    totalAmount: 0
+  });
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [newRequest, setNewRequest] = useState({
     amount: '',
     purpose: '',
     lender: '',
     duration: '',
-    businessPlan: '',
-    collateral: ''
+    documents: []
   });
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitRequest = () => {
-    const selectedLender = lenders.find(l => l.id === newRequest.lender);
-    const request = {
-      id: Date.now(),
-      cooperative: 'Ma Coopérative',
-      amount: parseFloat(newRequest.amount),
-      purpose: newRequest.purpose,
-      lender: selectedLender ? selectedLender.name : '',
-      status: 'En cours',
-      requestDate: new Date().toISOString().split('T')[0],
-      interestRate: Math.floor(Math.random() * 10) + 8,
-      duration: parseInt(newRequest.duration)
-    };
-    
-    setCreditRequests([...creditRequests, request]);
-    setNewRequest({
-      amount: '',
-      purpose: '',
-      lender: '',
-      duration: '',
-      businessPlan: '',
-      collateral: ''
-    });
-    setIsRequestModalOpen(false);
+  const STATUS_MAP = {
+    submitted: { label: 'Soumise', color: 'bg-gray-100 text-gray-800', icon: Clock },
+    pending: { label: 'En cours', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+    approved: { label: 'Approuvé', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+    rejected: { label: 'Rejeté', color: 'bg-red-100 text-red-800', icon: XCircle },
+    disbursed: { label: 'Débloqué', color: 'bg-blue-100 text-blue-800', icon: DollarSign },
+    repaid: { label: 'Remboursé', color: 'bg-gray-100 text-gray-800', icon: CheckCircle },
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Approuvé':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'En cours':
-        return <Clock className="w-4 h-4 text-yellow-600" />;
-      case 'Rejeté':
-        return <XCircle className="w-4 h-4 text-red-600" />;
-      default:
-        return <Clock className="w-4 h-4 text-gray-600" />;
+  useEffect(() => {
+    loadFinanceData();
+  }, []);
+
+  const loadFinanceData = async () => {
+    try {
+      setLoading(true);
+      const institutionsResponse = await apiService.getFinancialInstitutions();
+      setLenders(institutionsResponse.data.institutions);
+
+      const statsResponse = await apiService.getFinanceStats();
+      setStats(statsResponse.data.stats);
+
+      const creditsResponse = await apiService.getUserCredits();
+      setCreditRequests(creditsResponse.data || []);
+    } catch (error) {
+      console.error("Erreur chargement données finance:", error);
+      alert("Erreur lors du chargement des données: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Approuvé':
-        return 'bg-green-100 text-green-800';
-      case 'En cours':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Rejeté':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setNewRequest({ ...newRequest, documents: [...newRequest.documents, ...files] });
+  };
+
+  const removeFile = (index) => {
+    const updatedFiles = [...newRequest.documents];
+    updatedFiles.splice(index, 1);
+    setNewRequest({ ...newRequest, documents: updatedFiles });
+  };
+
+  const handleSubmitRequest = async () => {
+    try {
+      setSubmitting(true);
+
+      if (!newRequest.amount || parseFloat(newRequest.amount) < 10000) {
+        alert("Le montant minimum est de 10,000 FCFA");
+        return;
+      }
+      if (!newRequest.lender) {
+        alert("Veuillez sélectionner une institution financière");
+        return;
+      }
+      if (!newRequest.duration) {
+        alert("Veuillez saisir la durée du crédit");
+        return;
+      }
+      if (!newRequest.purpose.trim()) {
+        alert("Veuillez préciser l'objet du financement");
+        return;
+      }
+      if (!newRequest.documents || newRequest.documents.length === 0) {
+        alert("Veuillez joindre au moins un document justificatif");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("amount", newRequest.amount);
+      formData.append("purpose", newRequest.purpose);
+      formData.append("duration", newRequest.duration);
+      formData.append("lender", newRequest.lender);
+      newRequest.documents.forEach(file => formData.append("documents", file));
+
+      // const token = localStorage.getItem("token");
+
+      // await apiService.createCreditRequest(formData);
+
+
+      const response = await apiService.createCreditRequest(formData); 
+      // if (!response.ok) throw new Error(data.message || "Erreur serveur");
+
+      alert("✅ Demande soumise avec succès. Vous recevrez un email de confirmation.");
+
+      setNewRequest({ amount: '', purpose: '', lender: '', duration: '', documents: [] });
+      setIsRequestModalOpen(false);
+      loadFinanceData();
+    } catch (error) {
+      console.error("Erreur soumission demande:", error);
+      alert("Erreur lors de la soumission: " + error.message);
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  if (loading) return (
+    <div className="flex justify-center items-center h-64">
+      <Loader className="w-8 h-8 animate-spin text-blue-600" />
+      <span className="ml-2 text-gray-600">Chargement des données...</span>
+    </div>
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -138,301 +154,210 @@ export default function Finance() {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Demandes Totales</p>
-              <p className="text-2xl font-bold text-gray-900">{creditRequests.length}</p>
-            </div>
-            <FileText className="w-8 h-8 text-gray-400" />
+        <div className="bg-white rounded-lg border shadow-sm p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Demandes Totales</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalRequests}</p>
           </div>
+          <FileText className="w-8 h-8 text-gray-400" />
         </div>
-        
-        <div className="bg-white rounded-lg border shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Crédits Approuvés</p>
-              <p className="text-2xl font-bold text-green-600">
-                {creditRequests.filter(r => r.status === 'Approuvé').length}
-              </p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-400" />
+        <div className="bg-white rounded-lg border shadow-sm p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Crédits Approuvés</p>
+            <p className="text-2xl font-bold text-green-600">{stats.approvedRequests}</p>
           </div>
+          <CheckCircle className="w-8 h-8 text-green-400" />
         </div>
-        
-        <div className="bg-white rounded-lg border shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">En Attente</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {creditRequests.filter(r => r.status === 'En cours').length}
-              </p>
-            </div>
-            <Clock className="w-8 h-8 text-yellow-400" />
+        <div className="bg-white rounded-lg border shadow-sm p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">En Attente</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats.pendingRequests}</p>
           </div>
+          <Clock className="w-8 h-8 text-yellow-400" />
         </div>
-        
-        <div className="bg-white rounded-lg border shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Montant Total</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {creditRequests
-                  .filter(r => r.status === 'Approuvé')
-                  .reduce((sum, r) => sum + r.amount, 0)
-                  .toLocaleString()} FCFA
-              </p>
-            </div>
-            <DollarSign className="w-8 h-8 text-blue-400" />
+        <div className="bg-white rounded-lg border shadow-sm p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Montant Total</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.totalAmount.toLocaleString()} FCFA</p>
           </div>
+          <DollarSign className="w-8 h-8 text-blue-400" />
         </div>
       </div>
 
-      {/* Institutions Financières Partenaires */}
-      <div className="bg-white rounded-lg border shadow-sm">
-        <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Institutions Financières Partenaires</h2>
-          <p className="text-gray-600">Nos partenaires pour le financement des coopératives agricoles</p>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lenders.map((lender) => (
-              <div key={lender.id} className="bg-gray-50 rounded-lg border p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sm">{lender.name}</h3>
-                    <p className="text-xs text-gray-500 mb-1">{lender.type}</p>
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs border border-gray-200 bg-white">
-                      Taux: {lender.rate}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Liste des Demandes */}
-      <div className="bg-white rounded-lg border shadow-sm">
-        <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Mes Demandes de Crédit</h2>
-          <p className="text-gray-600">Suivi de vos demandes de financement</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+      {/* Tableau demandes */}
+      <div className="bg-white rounded-lg border shadow-sm overflow-x-auto">
+        <h2 className="text-lg font-semibold text-gray-900 p-6 border-b">Mes Demandes de Crédit</h2>
+        <table className="w-full min-w-max">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coopérative</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objet</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institution</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durée</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taux</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {creditRequests.length === 0 ? (
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coopérative</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objet</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institution</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durée</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taux</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                <td colSpan={9} className="text-center py-8 text-gray-500">Aucune demande de crédit trouvée</td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {creditRequests.map((request) => (
-                <tr key={request.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{request.cooperative}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.amount.toLocaleString()} FCFA</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{request.purpose}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.lender}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.duration} mois</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.interestRate}%</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(request.requestDate).toLocaleDateString('fr-FR')}
+            ) : creditRequests.map(request => {
+              const { label, color: statusColor, icon: StatusIcon } = STATUS_MAP[request.status.toLowerCase()] || {};
+              return (
+                <tr key={request._id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {request.cooperative.name} {/* éventuellement récupérer le nom de la coop via ton API */}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td>{request.amount.toLocaleString()} FCFA</td>
+                  <td>{request.purpose}</td>
+                  <td>{request.lender}</td>
+                  <td>{request.duration} mois</td>
+                  <td>{request.interestRate || 0}%</td>
+                  <td>
+                    {request.documents && request.documents.length > 0 ? (
+                      <ul>
+                        {request.documents.map((doc, idx) => (
+                          <li key={idx}>
+                            <a href={`http://localhost:5000${doc.url}`} target="_blank" rel="noopener noreferrer">
+                              {doc.name}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : "Aucun document"}
+                  </td>
+
+                  <td>{new Date(request.createdAt).toLocaleDateString("fr-FR")}</td>
+                  <td>
+                    {/* {STATUS_MAP[request.status.toLowerCase()]?.label || request.status} */}
                     <div className="flex items-center space-x-2">
-                      {getStatusIcon(request.status)}
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                        {request.status}
+                      {StatusIcon && <StatusIcon className="w-4 h-4" />}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                        {label || request.status}
                       </span>
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Modal de demande de crédit */}
+      {/* Modal Création */}
       {isRequestModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Demande de Crédit</h2>
-                <p className="text-gray-600">Remplissez votre demande de financement</p>
-              </div>
-              
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Nouvelle Demande de Crédit</h2>
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Montant demandé (FCFA)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Montant (FCFA) *</label>
                   <input
                     type="number"
                     placeholder="5000000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border rounded-md"
                     value={newRequest.amount}
-                    onChange={(e) => setNewRequest({...newRequest, amount: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, amount: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Objet du crédit
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Objet du crédit *</label>
                   <textarea
-                    placeholder="Décrivez l'utilisation prévue des fonds..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Décrivez l'utilisation des fonds..."
+                    className="w-full px-3 py-2 border rounded-md"
                     value={newRequest.purpose}
-                    onChange={(e) => setNewRequest({...newRequest, purpose: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, purpose: e.target.value })}
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Institution financière
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Institution *</label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border rounded-md"
                     value={newRequest.lender}
-                    onChange={(e) => setNewRequest({...newRequest, lender: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, lender: e.target.value })}
                   >
-                    <option value="">Choisissez une institution</option>
-                    {lenders.map((lender) => (
+                    <option value="">Sélectionnez une institution</option>
+                    {lenders.map(lender => (
                       <option key={lender.id} value={lender.id}>
                         {lender.name} - {lender.type} - Taux: {lender.rate}
                       </option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Durée (mois)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Durée (mois) *</label>
                   <input
                     type="number"
                     placeholder="24"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border rounded-md"
                     value={newRequest.duration}
-                    onChange={(e) => setNewRequest({...newRequest, duration: e.target.value})}
+                    onChange={(e) => setNewRequest({ ...newRequest, duration: e.target.value })}
                   />
                 </div>
-                
+
+                {/* Upload moderne */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Plan d'affaires (résumé)
-                  </label>
-                  <textarea
-                    placeholder="Décrivez votre plan d'affaires et la rentabilité prévue..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={newRequest.businessPlan}
-                    onChange={(e) => setNewRequest({...newRequest, businessPlan: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Garanties proposées
-                  </label>
-                  <textarea
-                    placeholder="Décrivez les garanties que vous pouvez offrir..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={newRequest.collateral}
-                    onChange={(e) => setNewRequest({...newRequest, collateral: e.target.value})}
-                  />
+                  <label className="block text-sm font-medium text-gray-700">Documents justificatifs *</label>
+                  <div className="border border-dashed border-gray-300 rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 relative">
+                    <UploadCloud className="w-8 h-8 text-blue-500 mb-2" />
+                    <span className="text-gray-500 text-sm mb-2 text-center">Glissez-déposez vos fichiers ou cliquez pour sélectionner</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={handleFileChange}
+                      className="absolute w-full h-full opacity-0 cursor-pointer"
+                    />
+                  </div>
+                  {newRequest.documents.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {newRequest.documents.map((file, idx) => (
+                        <li key={idx} className="flex items-center justify-between bg-gray-100 px-3 py-1 rounded-md">
+                          <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                          <button type="button" onClick={() => removeFile(idx)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-3 pt-6">
                 <button
                   onClick={() => setIsRequestModalOpen(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border rounded-md"
+                  disabled={submitting}
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleSubmitRequest}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
                 >
-                  Soumettre la demande
+                  {submitting && <Loader className="w-4 h-4 animate-spin" />}
+                  <span>{submitting ? 'Soumission...' : 'Soumettre'}</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Conseils Financiers */}
-      <div className="bg-white rounded-lg border shadow-sm">
-        <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Conseils pour Obtenir un Crédit</h2>
-          <p className="text-gray-600">Améliorez vos chances d'obtenir un financement</p>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold text-green-800">Documents Requis</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span>Statuts de la coopérative</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span>Plan d'affaires détaillé</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span>États financiers (3 dernières années)</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span>Garanties ou cautions</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-semibold text-blue-800">Conseils Pratiques</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center space-x-2">
-                  <Package className="w-4 h-4 text-blue-600" />
-                  <span>Diversifiez vos sources de financement</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Package className="w-4 h-4 text-blue-600" />
-                  <span>Maintenez une bonne tenue des comptes</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Package className="w-4 h-4 text-blue-600" />
-                  <span>Développez des relations avec les banques</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Package className="w-4 h-4 text-blue-600" />
-                  <span>Préparez un dossier complet et professionnel</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
