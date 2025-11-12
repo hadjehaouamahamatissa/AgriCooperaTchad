@@ -7,12 +7,24 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
+    // Récupérer le token du localStorage
+    const token = localStorage.getItem('token');
+
     const url = `${this.baseURL}${endpoint}`;
+
+    const headers = {
+
+      'Content-Type': 'application/json',
+      ...options.headers,
+    }
+    console.log('Token envoyé au backend:', token);
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers, // ✅ Maintenant headers est bien défini
       ...options,
     };
 
@@ -23,21 +35,27 @@ class ApiService {
       }
 
       const response = await fetch(url, config);
-      const data = await response.json();
-
-      console.log(`📡 API Response (${response.status}):`, data);
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error(`❌ API Error for ${endpoint}:`, error);
-      throw error;
+          // ✅ CORRECTION: Gérer les réponses sans contenu JSON
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
     }
-  }
 
+    console.log(`📡 API Response (${response.status}):`, data);
+
+    if (!response.ok) {
+      throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`❌ API Error for ${endpoint}:`, error);
+    throw error;
+  }
+}
   // Auth methods
   async login(credentials) {
     const response = await this.request('/auth/login', {
@@ -64,6 +82,37 @@ class ApiService {
     return this.request('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
+    });
+  }
+
+  async resendOTP(email) {
+    return this.request('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async verifyEmail(email, code) {
+    return this.request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+  }
+
+  async verifyOTP(email, otp) {
+    return this.request('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+  }
+
+  async logout() {
+    const token = localStorage.getItem('token');
+    return this.request('/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   }
 
@@ -217,9 +266,33 @@ class ApiService {
     return this.request('/cooperatives', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(cooperativeData),
+    });
+  }
+
+  async addMember(cooperativeId, memberData) {
+    const token = localStorage.getItem('token');
+    return this.request(`/cooperatives/${cooperativeId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(memberData),
+    });
+  }
+
+  
+  async deleteCooperative(id) {
+    const token = localStorage.getItem('token');
+    return this.request(`/cooperatives/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   }
 
@@ -233,6 +306,8 @@ class ApiService {
     });
   }
 
+
+
   async updateUserProfile(userData) {
     const token = localStorage.getItem('token');
     return this.request('/users/profile', {
@@ -245,63 +320,56 @@ class ApiService {
   }
 
   // Crédits
-  async requestCredit(creditData) {
-    const token = localStorage.getItem('token');
-    return this.request('/credits/request', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(creditData),
-    });
+
+ // Crédits
+  getUserCredits() {
+    return this.request('/credits'); // GET /api/credits
   }
 
-  async getUserCredits(params = {}) {
-    const token = localStorage.getItem('token');
-    const queryString = new URLSearchParams(params).toString();
-    const endpoint = `/credits/user${queryString ? `?${queryString}` : ''}`;
-    return this.request(endpoint, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  }
-
-  async getCooperativeCredits(params = {}) {
-    const token = localStorage.getItem('token');
-    const queryString = new URLSearchParams(params).toString();
-    const endpoint = `/credits/cooperative${queryString ? `?${queryString}` : ''}`;
-    return this.request(endpoint, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  }
-
-  async analyzeCredit(creditId, data) {
-    const token = localStorage.getItem('token');
-    return this.request(`/credits/analyze/${creditId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    });
-  }
-
-  async payInstallment(creditId, echeanceId) {
-    const token = localStorage.getItem('token');
-    return this.request(`/credits/pay/${creditId}/${echeanceId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  }
-
-
-
+  async createCreditRequest(formData) {
+  const token = localStorage.getItem('token');
+  return fetch(`${this.baseURL}/credits`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  });
 }
+
+
+  // Institutions financières partenaires
+  getFinancialInstitutions() {
+    return this.request('/credits/finance/institutions'); // GET /api/credits/finance/institutions
+  }
+
+  // Statistiques financières
+  getFinanceStats() {
+    return this.request('/credits/finance/stats'); // GET /api/credits/finance/stats
+  }
+
+
+  // Crédit coopérative
+  getCooperativeCredits() {
+    return this.request('/cooperative'); // GET /api/credits/cooperative
+  }
+
+  // Revue / approbation / rejet (analyste)
+  reviewCredit(id, data) {
+    return this.request(`/cooperative/${id}/review`, {
+      method: 'PUT',
+      // headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
+
+  // Payer une échéance
+  payInstallment(creditId, installmentId) {
+    return this.request(`/${creditId}/installments/${installmentId}/pay`, {
+      method: 'POST'
+    });
+  }
+}
+
+
 
 // Export singleton instance
 export const apiService = new ApiService();
