@@ -355,10 +355,10 @@ const LayoutContent = ({ children }) => {
     };
 
     const menuItems = [
-        { icon: Home, label: "Tableau de bord", path: "/Home" },
-        { icon: Users, label: "Cooperative", path: "/cooperatives" },
-        { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
-        { icon: DollarSign, label: "Finance", path: "/finance" },
+        { icon: Home, label: t("Tableau de bord"), path: "/Home" },
+        { icon: Users, label: t("Cooperative"), path: "/cooperatives" },
+        { icon: ShoppingCart, label: t("Marketplace"), path: "/marketplace" },
+        { icon: DollarSign, label: t("Finance"), path: "/finance" },
         // { icon: BookOpen, label: "Ressources", path: "/resources" },
     ];
 
@@ -412,7 +412,7 @@ const LayoutContent = ({ children }) => {
                 {/* Section bas de sidebar */}
                 <div className="mt-4 space-y-2">
                     {/* Sélecteur de langue */}
-                    <LanguageSelector />
+                    {/* <LanguageSelector /> */}
                     
                     {/* Bouton profil */}
                     <button
@@ -463,7 +463,6 @@ const LayoutContent = ({ children }) => {
                 />
             )}
 
-            {/* Modals - MAINTENANT INTÉGRÉS DIRECTEMENT */}
             <ProfileModal 
                 isOpen={showProfileModal}
                 onClose={() => setShowProfileModal(false)}
