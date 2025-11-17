@@ -1,4 +1,3 @@
-// src/components/Layout.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -360,7 +359,7 @@ const LayoutContent = ({ children }) => {
         { icon: Users, label: "Cooperative", path: "/cooperatives" },
         { icon: ShoppingCart, label: "Marketplace", path: "/marketplace" },
         { icon: DollarSign, label: "Finance", path: "/finance" },
-        { icon: BookOpen, label: "Ressources", path: "/resources" },
+        // { icon: BookOpen, label: "Ressources", path: "/resources" },
     ];
 
     const displayName = user ? (user.nom || user.name || user.prenom || t('auth.myProfile')) : t('auth.myProfile');
