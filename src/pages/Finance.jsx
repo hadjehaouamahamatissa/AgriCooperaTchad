@@ -114,7 +114,7 @@ export default function Finance() {
       // await apiService.createCreditRequest(formData);
 
 
-      const response = await apiService.createCreditRequest(formData); 
+      const response = await apiService.createCreditRequest(formData);
       // if (!response.ok) throw new Error(data.message || "Erreur serveur");
 
       alert("✅ Demande soumise avec succès. Vous recevrez un email de confirmation.");
@@ -213,7 +213,7 @@ export default function Finance() {
               return (
                 <tr key={request._id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {request.cooperative.name} {/* éventuellement récupérer le nom de la coop via ton API */}
+                    {request.cooperative?.name || "Nom de la coop"} {/* éventuellement récupérer le nom de la coop via ton API */}
                   </td>
                   <td>{request.amount.toLocaleString()} FCFA</td>
                   <td>{request.purpose}</td>
