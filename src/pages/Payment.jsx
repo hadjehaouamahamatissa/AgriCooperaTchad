@@ -304,113 +304,113 @@ const StripeCardForm = ({ onSubmit, onCancel, amount }) => {
   );
 };
 
-// --- Formulaire Carte Bancaire (Legacy) ---
-const CardPaymentForm = ({ onSubmit, onCancel }) => {
-  const [cardData, setCardData] = useState({
-    number: '',
-    expiry: '',
-    cvv: '',
-    name: ''
-  });
-  const [loading, setLoading] = useState(false);
+// // --- Formulaire Carte Bancaire (Legacy) ---
+// const CardPaymentForm = ({ onSubmit, onCancel }) => {
+//   const [cardData, setCardData] = useState({
+//     number: '',
+//     expiry: '',
+//     cvv: '',
+//     name: ''
+//   });
+//   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      onSubmit({ ...cardData, method: 'credit_card' });
-      setLoading(false);
-    }, 3000);
-  };
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setTimeout(() => {
+//       onSubmit({ ...cardData, method: 'credit_card' });
+//       setLoading(false);
+//     }, 3000);
+//   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nom sur la carte
-        </label>
-        <input
-          type="text"
-          value={cardData.name}
-          onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
-          placeholder="Nom complet"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-      </div>
+//   return (
+//     <form onSubmit={handleSubmit} className="space-y-4">
+//       <div>
+//         <label className="block text-sm font-medium text-gray-700 mb-2">
+//           Nom sur la carte
+//         </label>
+//         <input
+//           type="text"
+//           value={cardData.name}
+//           onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+//           placeholder="Nom complet"
+//           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//           required
+//         />
+//       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Numéro de carte
-        </label>
-        <input
-          type="text"
-          value={cardData.number}
-          onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
-          placeholder="1234 5678 9012 3456"
-          maxLength="19"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
-        />
-      </div>
+//       <div>
+//         <label className="block text-sm font-medium text-gray-700 mb-2">
+//           Numéro de carte
+//         </label>
+//         <input
+//           type="text"
+//           value={cardData.number}
+//           onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+//           placeholder="1234 5678 9012 3456"
+//           maxLength="19"
+//           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//           required
+//         />
+//       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date d'expiration
-          </label>
-          <input
-            type="text"
-            value={cardData.expiry}
-            onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
-            placeholder="MM/AA"
-            maxLength="5"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            CVV
-          </label>
-          <input
-            type="text"
-            value={cardData.cvv}
-            onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
-            placeholder="123"
-            maxLength="4"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-      </div>
+//       <div className="grid grid-cols-2 gap-4">
+//         <div>
+//           <label className="block text-sm font-medium text-gray-700 mb-2">
+//             Date d'expiration
+//           </label>
+//           <input
+//             type="text"
+//             value={cardData.expiry}
+//             onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
+//             placeholder="MM/AA"
+//             maxLength="5"
+//             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//             required
+//           />
+//         </div>
+//         <div>
+//           <label className="block text-sm font-medium text-gray-700 mb-2">
+//             CVV
+//           </label>
+//           <input
+//             type="text"
+//             value={cardData.cvv}
+//             onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+//             placeholder="123"
+//             maxLength="4"
+//             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//             required
+//           />
+//         </div>
+//       </div>
 
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <span>Paiement sécurisé SSL</span>
-        </div>
-      </div>
+//       <div className="bg-gray-50 p-4 rounded-lg">
+//         <div className="flex items-center space-x-2 text-sm text-gray-600">
+//           <CheckCircle className="h-4 w-4 text-green-600" />
+//           <span>Paiement sécurisé SSL</span>
+//         </div>
+//       </div>
 
-      <div className="flex space-x-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-        >
-          Annuler
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Traitement...' : 'Payer par carte'}
-        </button>
-      </div>
-    </form>
-  );
-};
+//       <div className="flex space-x-3">
+//         <button
+//           type="button"
+//           onClick={onCancel}
+//           className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+//         >
+//           Annuler
+//         </button>
+//         <button
+//           type="submit"
+//           disabled={loading}
+//           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+//         >
+//           {loading ? 'Traitement...' : 'Payer par carte'}
+//         </button>
+//       </div>
+//     </form>
+//   );
+// };
 
 // --- Composant principal Payment ---
 export default function Payment({ order, onSuccess, onCancel }) {
@@ -422,7 +422,7 @@ export default function Payment({ order, onSuccess, onCancel }) {
     { id: 'moov', type: 'moov', name: 'Moov Money', description: 'Paiement mobile via Moov Money', fees: '1% du montant (min. 100 XAF)' },
     { id: 'airtel', type: 'airtel', name: 'Airtel Money', description: 'Paiement mobile via Airtel Money', fees: '1.5% du montant (min. 150 XAF)' },
     { id: 'stripe', type: 'card', name: 'Carte Bancaire (Stripe)', description: 'Visa, Mastercard via Stripe', fees: '2.9% + 30 XAF' },
-    { id: 'card', type: 'card', name: 'Carte Bancaire', description: 'Visa, Mastercard acceptées', fees: '2.5% du montant' },
+    // { id: 'card', type: 'card', name: 'Carte Bancaire', description: 'Visa, Mastercard acceptées', fees: '2.5% du montant' },
   ];
 
   const handleMethodSelect = (method) => setSelectedMethod(method);
