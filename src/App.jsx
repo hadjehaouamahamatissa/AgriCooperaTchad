@@ -7,9 +7,9 @@ import Layout from "./components/Layout"
 import Cooperatives from "./pages/Cooperatives"
 import Marketplace from "./pages/Marketplace"
 import Finance from "./pages/Finance"
-import Resources from "./pages/Resources"
+// import Resources from "./pages/Resources"
 import LoginPage from "./pages/LoginPage"
-import VerifyOTP from "./pages/VerifyOTP"
+// import VerifyOTP from "./pages/VerifyOTP"
 // import SignupPage from "./pages/SignupPage"
 
 function App() {
@@ -21,11 +21,11 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 {/* <Route path="/signup" element={<SignupPage />} /> */}
                 <Route path="/home" element={<Layout><Home /></Layout>} />
-                <Route path="/verify-otp" element={<VerifyOTP />} />
+                {/* <Route path="/verify-otp" element={<VerifyOTP />} /> */}
                 <Route path="/cooperatives" element={<Layout><Cooperatives /></Layout>} />
                 <Route path="/marketplace" element={<Layout><Marketplace /></Layout>} />
                 <Route path="/finance" element={<Layout><Finance /></Layout>} />
-                <Route path="/resources" element={<Layout><Resources /></Layout>} />
+                {/* <Route path="/resources" element={<Layout><Resources /></Layout>} /> */}
             </Routes>
         </BrowserRouter>
         </LanguageProvider>
